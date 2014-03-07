@@ -22,7 +22,27 @@ class Grid:
 
 class Creeps:
     """encodes the state of a creep within the game"""
-    def __init__(self):
+    path_list = None
+    def __init__(self,x,y,vx,vy,radius,checkpoint_x,checkpoint_y,num_of_sides,color):
+        self.x = x
+        self.y = y
+        self.vx = vx
+        self.vy = vy
+        self.radius = self.radius
+        self.checkpoint_x = checkpoint_x
+        
+    def update(self):
+        """updates attributes of the creep"""
+        
+    def step(self):
+        """creep moves based on current velocity and checkpoint. creep moves amount specified by velocity
+        knows that its going to overshoot the checkpoint."""
+        #if you won't overstep checkpoint
+        self.x += self.vx
+        self.y += self.vy
+        #else step exactly the amount neccessary
+        
+        
         
 class Tower:
     """encodes the state of a tower within the game"""
@@ -31,6 +51,12 @@ class Tower:
 class Bullets:
     """encodes the state of a bullet within the game"""
     def __init__(self):
+        
+    def step(self):
+    """creep moves based on current velocity and checkpoint. creep moves amount specified by velocity
+    knows that its going to overshoot the checkpoint."""
+        self.x += self.vx
+        self.y += self.vy
         
 class Path:
     """list of positions within the grid"""

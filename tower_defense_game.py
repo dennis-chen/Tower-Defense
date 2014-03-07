@@ -28,8 +28,8 @@ class Tower:
     """encodes the state of a tower within the game"""
     def __init__(self):
         
-class Bullets:
-    """encodes the state of a bullet within the game"""
+class Lasers:
+    """encodes the state of a Lasers within the game"""
     def __init__(self):
         
 class Path:

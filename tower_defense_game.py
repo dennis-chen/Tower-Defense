@@ -48,8 +48,8 @@ class Tower:
     """encodes the state of a tower within the game"""
     def __init__(self):
         
-class Bullets:
-    """encodes the state of a bullet within the game"""
+class Pellets:
+    """encodes the state of a Lasers within the game"""
     def __init__(self):
         
     def step(self):
@@ -64,4 +64,44 @@ class Path:
         
 class PyGameWindowView:
     """renders TD model to game window"""
-    def __init__(self):
+    def __init__(self,model,screen):
+        self.model = model
+        self.screen = screen
+        
+    #reference
+    def draw(self):
+        self.screen.fill(pygame.Color(0,0,0))
+        for brick in self.model.bricks:
+            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
+        pygame.draw.rect(self.screen, pygame.Color(self.model.paddle.color[0], self.model.paddle.color[1], self.model.paddle.color[2]), pygame.Rect(self.model.paddle.x, self.model.paddle.y, self.model.paddle.width, self.model.paddle.height))
+        pygame.display.update()
+        
+
+#reference for mouse control
+class PyGameMouseController:
+    def __init__(self,model):
+        self.model = model
+    
+    def handle_mouse_event(self,event):
+        if event.type == MOUSEMOTION:
+            self.model.paddle.x = event.pos[0] - self.model.paddle.width/2.0
+
+if __name__ == '__main__':
+    pygame.init()
+
+    size = (640,640)
+    screen = pygame.display.set_mode(size)
+
+    model = TDModel()
+    view = PyGameWindowView(model,screen)
+    controller = PyGameMouseController(model)
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+            controller.handle_pygame_event(event)
+        model.update()
+        view.draw()
+        time.sleep(.001)
+    pygame.quit()

@@ -13,12 +13,12 @@ import time
 class TDModel:
     """encodes the game state"""
     def __init__(self):
-        
+        return
 
-class Grid:
-    """encodes positions of towers and path squares"""
+class TileGrid:
+    """encodes tower and path tiles"""
     def __init__(self):
-        
+        return
 
 class Creeps:
     """encodes the state of a creep within the game"""
@@ -32,12 +32,13 @@ class Creeps:
         self.checkpoint_x = checkpoint_x
         
     def update(self):
-        """updates attributes of the creep"""
+        """updates attributes of the creep, including size and color"""
         
     def step(self):
         """creep moves based on current velocity and checkpoint. creep moves amount specified by velocity
         knows that its going to overshoot the checkpoint."""
         #if you won't overstep checkpoint
+        pass
         self.x += self.vx
         self.y += self.vy
         #else step exactly the amount neccessary
@@ -47,20 +48,24 @@ class Creeps:
 class Tower:
     """encodes the state of a tower within the game"""
     def __init__(self):
+        pass
         
 class Pellets:
     """encodes the state of a Lasers within the game"""
     def __init__(self):
+        pass
         
     def step(self):
-    """creep moves based on current velocity and checkpoint. creep moves amount specified by velocity
-    knows that its going to overshoot the checkpoint."""
+        """creep moves based on current velocity and checkpoint. creep moves amount specified by velocity
+        knows that its going to overshoot the checkpoint."""
+        pass
         self.x += self.vx
         self.y += self.vy
         
 class Path:
     """list of positions within the grid"""
     def __init__(self):
+        pass
         
 class PyGameWindowView:
     """renders TD model to game window"""
@@ -71,10 +76,10 @@ class PyGameWindowView:
     #reference
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
-        for brick in self.model.bricks:
-            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
-        pygame.draw.rect(self.screen, pygame.Color(self.model.paddle.color[0], self.model.paddle.color[1], self.model.paddle.color[2]), pygame.Rect(self.model.paddle.x, self.model.paddle.y, self.model.paddle.width, self.model.paddle.height))
-        pygame.display.update()
+#        for brick in self.model.bricks:
+#            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
+#        pygame.draw.rect(self.screen, pygame.Color(self.model.paddle.color[0], self.model.paddle.color[1], self.model.paddle.color[2]), pygame.Rect(self.model.paddle.x, self.model.paddle.y, self.model.paddle.width, self.model.paddle.height))
+#        pygame.display.update()
         
 
 #reference for mouse control
@@ -100,8 +105,8 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
-            controller.handle_pygame_event(event)
-        model.update()
+            #controller.handle_pygame_event(event)
+        #model.update()
         view.draw()
         time.sleep(.001)
     pygame.quit()

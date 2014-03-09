@@ -16,10 +16,15 @@ class TDModel:
     def __init__(self, tileGrid):
         self.tileGrid = tileGrid
         self.remaining_lives = 20
+        self.creeplist = []
+        self.pelletlist = []
 
     def update():
         if pygame.time.get_ticks() % 2:
             creep = Creep(TileGrid.path_list[0][0],TileGrid.path_list[0][1],0,-1,1,10,1,[255,0,0])
+
+
+        
 def collision_check_full(x1,y1,x2,y2,r1,r2):
     """checks if two circles collide, returns boolean"""
     dist_squared = (x2-x1)**2+(y2-y1)**2
@@ -28,46 +33,61 @@ def collision_check_full(x1,y1,x2,y2,r1,r2):
 class TileGrid:
     """encodes tower and path tiles"""
     def __init__(self):
-        self.tiles = np.empty( (16*16), dtype=object)
+        self.tiles = np.empty( [16,16], dtype=object)
+        self.tiles.fill(BlankTile())
         start_tile = PathTile()
         y = 15
         x = randint(1,15)
-        tiles[x][y] = start_tile
+        self.tiles[x][y] = start_tile
         path_list = []
         path_list.append(self.return_center(x,y))
         for i in range(0,randint(3,5)):
             y-=1
             tile = PathTile()
-            tiles[x][y] = tile
+            self.tiles[x][y] = tile
         path_list.append(self.return_center(x,y))
-        direction = random.choice([1,-1])
-        for i in range(0,randint(0,min(x-1,16-x-1))): #avoid going out of the grid in the x direction 
-            x-=direction
+        rand_x = x
+        while rand_x == x:
+            rand_x = randint(1,15)
+        step = 1
+        if rand_x < x:
+            step = -1
+        else:
+            step = 1
+        for i in range(x,rand_x,step): #avoid going out of the grid in the x direction 
+            x += (rand_x - x)/abs(rand_x - x)
             tile = PathTile()
-            tiles[x][y] = tile
+            self.tiles[x][y] = tile
         path_list.append(self.return_center(x,y))
         for i in range(0,randint(3,5)):
             y-=1
             tile = PathTile()
-            tiles[x][y] = tile
-        direction = random.choice([1,-1])
+            self.tiles[x][y] = tile
         path_list.append(self.return_center(x,y))
-        for i in range(0,randint(0,min(x-1,16-x-1))): #avoid going out of the grid in the x direction 
-            x-=direction
+        rand_x = x
+        while rand_x == x:
+            rand_x = randint(1,15)
+        step = 1
+        if rand_x < x:
+            step = -1
+        else:
+            step = 1
+        for i in range(x,rand_x,step): #avoid going out of the grid in the x direction 
+            x += (rand_x - x)/abs(rand_x - x)
             tile = PathTile()
-            tiles[x][y] = tile
+            self.tiles[x][y] = tile
         path_list.append(self.return_center(x,y))
         while y > 0:
             y-=1
             tile = PathTile()
-            tiles[x][y] = tile
+            self.tiles[x][y] = tile
         path_list.append(self.return_center(x,y))
         self.path_list = path_list
             
-    def return_center(self,x_in_grid,y_in_grid): #tiles are 40 by 40 pixels, grid is 640 by 640
+    def return_center(self,x,y): #tiles are 40 by 40 pixels, grid is 640 by 640
         return (x*40+20,y*40+20)
         
-    def return_drawing_position(self,x_in_grid,y_in_grid):
+    def return_drawing_position(self,x,y):
         return (x*40,y*40)
         
     def return_creep_path(self):
@@ -75,10 +95,13 @@ class TileGrid:
         
         
 class PathTile:
-    def __init__(self,color):
-        self.color = color
+    def __init__(self):
+        self.color = (255,0,0)
         
                 
+class BlankTile:
+    def __init__(self):
+        self.color = (0,0,255)
         
 class TowerTile:
     def __init__(self,x,y):
@@ -86,6 +109,7 @@ class TowerTile:
         self.y = y
         self.level = 1
         self.speed = 1
+        self.color = (0,255,0)
 
 class Creeps:
     """encodes the state of a creep within the game"""
@@ -172,10 +196,22 @@ class PyGameWindowView:
     #reference
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
+        grid = self.model.tileGrid.tiles
+        creeps = self.model.creeplist
+        for i in range(16):
+            for j in range(16):
+                obj = grid[i][j]
+                pos = self.model.tileGrid.return_drawing_position(i,j)
+                pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
+        for c in creeps:
+            pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
+            
+        pygame.display.update()
+        
 #        for brick in self.model.bricks:
 #            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
 #        pygame.draw.rect(self.screen, pygame.Color(self.model.paddle.color[0], self.model.paddle.color[1], self.model.paddle.color[2]), pygame.Rect(self.model.paddle.x, self.model.paddle.y, self.model.paddle.width, self.model.paddle.height))
-#        pygame.display.update()
+#        
         
 
 #reference for mouse control
@@ -194,6 +230,7 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
 
     model = TDModel(tile_grid)
+    print tile_grid.return_creep_path()
     view = PyGameWindowView(model,screen)
     controller = PyGameMouseController(model)
     running = True

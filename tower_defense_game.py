@@ -198,7 +198,8 @@ class PyGameWindowView:
                 obj = grid[i][j]
                 pos = self.model.tileGrid.return_drawing_position(i,j)
                 pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
-        for creep in creeps:
+        for c in creeps:
+            pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
             
         pygame.display.update()
         

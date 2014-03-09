@@ -19,7 +19,8 @@ class BrickBreakerModel:
             for y in range(10,240,30):
                 brick = Brick((255,0,0),20,100,x,y)
                 self.bricks.append(brick)
-
+    
+    
 class Brick:
     """ Encodes the state of a brick in the game """
     def __init__(self,color,height,width,x,y):

@@ -20,8 +20,8 @@ class TDModel:
         
 def collision_check_full(x1,y1,x2,y2,r1,r2):
     """checks if two circles collide, returns boolean"""
-    dist_squared = (x2-x1)^2+(y2-y1)^2
-    return dist_squared < r1+r2
+    dist_squared = (x2-x1)**2+(y2-y1)**2
+    return dist_squared < (r1+r2)**2
     
 class TileGrid:
     """encodes tower and path tiles"""
@@ -217,6 +217,7 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
 
     model = TDModel(tile_grid)
+    print tile_grid.return_creep_path()
     view = PyGameWindowView(model,screen)
     controller = PyGameMouseController(model)
     running = True

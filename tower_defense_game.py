@@ -355,6 +355,10 @@ class PyGameWindowView:
                 obj = grid[i][j]
                 pos = self.model.tileGrid.return_drawing_position(i,j)
                 self.screen.blit(obj.image,(pos[0], pos[1]))
+                if isinstance(obj,TowerTile):
+                    if obj.angle != None:
+                        angle = radians(obj.angle + 90)
+                        pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)))
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         for c in creeps:
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)

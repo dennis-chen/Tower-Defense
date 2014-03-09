@@ -13,7 +13,7 @@ import time
 class TDModel:
     """encodes the game state"""
     def __init__(self):
-        self.remaining_lives = remaining_lives
+        self.remaining_lives = 20
         return
 
 class TileGrid:
@@ -24,11 +24,11 @@ class TileGrid:
 class Creeps:
     """encodes the state of a creep within the game"""
     path_list = None
-    def __init__(self,x,y,vx,vy,radius,checkpoint_index,num_of_sides,color):
+    def __init__(self,x,y,vx,vy,speed,radius,checkpoint_index,num_of_sides,color):
         self.x = x
         self.y = y
-        self.vx = vx
-        self.vy = vy
+        self.vx = 0
+        self.vy = speed
         self.radius = self.radius
         self.checkpoint_index = checkpoint_index;
         
@@ -49,7 +49,6 @@ class Creeps:
         """Method to execute when creep should be removed from screen"""
         #remove creep from list of active creeps, undraw
         
-
     def step(self):
         """creep moves based on current velocity and checkpoint. creep moves
         amount specified by velocity, and increments counter if it will hit
@@ -61,9 +60,15 @@ class Creeps:
         if sign(vy)*(checkselfy-locy) > 0:
             self.y = locy
             self.checkpoint_index +=1
+            self.vy = 0
+            newlocx = checkpoint_loc(self)[0]
+            self.vx = speed*sign(newlocx-self.x)
         elif sign(vx)*(checkselfx-locx) > 0:
             self.x = locx
             self.checkpoint_index +=1
+            self.vx = 0
+            newlocy = checkpoint_loc(self)[1]
+            self.vy = speed*sign(newlocy-self.y)
         else:
             self.x += self.vx
             self.y += self.vy        

@@ -21,7 +21,7 @@ class TDModel:
 
     def update(self):
         print self.tileGrid.path_list
-        if (pygame.time.get_ticks()) % 4:
+        if len(self.creeplist)<2:
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
@@ -142,11 +142,11 @@ class Creeps:
         self.x = x
         self.y = y
         self.vx = 0
-        self.vy = speed
+        self.vy = -speed
         self.speed = speed
         self.radius = radius
         self.checkpoint_index = checkpoint_index
-        self.color=[10*speed,1*speed,5*speed]
+        self.color=[randint(0,255),randint(0,255),randint(0,255)]
         
     def checkpoint_loc(self):
         """gets the checkpoint location from the list"""
@@ -169,19 +169,19 @@ class Creeps:
         """creep moves based on current velocity and checkpoint. creep moves
         amount specified by velocity, and increments counter if it will hit
         checkpoint."""
-        checkselfx = self.vx + self.x
-        checkselfy = self.vy + self.y
-        locx = self.checkpoint_loc()[0]
-        locy = self.checkpoint_loc()[1]
+        xnew = self.vx + self.x
+        ynew = self.vy + self.y
+        xnode = self.checkpoint_loc()[0]
+        ynode = self.checkpoint_loc()[1]
         print "Step execute"
-        if self.vy*(checkselfy-locy) >= 0:
-            self.y = locy
+        if sign_arg(self.vy)*(ynew-ynode) > 0:
+            self.y = ynode
             self.checkpoint_index +=1
             self.vy = 0
             newlocx = self.checkpoint_loc()[0]            
             self.vx = self.speed*sign_arg(newlocx-self.x)
-        elif self.vx*(checkselfx-locx) > 0:
-            self.x = locx
+        elif self.vx*(xnew-xnode) > 0:
+            self.x = xnode
             self.checkpoint_index +=1
             self.vx = 0
             newlocy = self.checkpoint_loc()[1]

@@ -20,7 +20,6 @@ class TDModel:
     def update():
         if pygame.time.get_ticks() % 2:
             creep = Creep(TileGrid.path_list[0][0],TileGrid.path_list[0][1],0,-1,1,10,1,[255,0,0])
-,x,y,vx,vy,speed,radius,checkpoint_index,num_of_sides,color)
 def collision_check_full(x1,y1,x2,y2,r1,r2):
     """checks if two circles collide, returns boolean"""
     dist_squared = (x2-x1)**2+(y2-y1)**2

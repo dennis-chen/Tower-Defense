@@ -19,7 +19,7 @@ class TDModel:
         self.creeplist = []
         self.pelletlist = []
 
-    def update():
+    def update(self):
         if pygame.time.get_ticks() % 2:
             creep = Creep(TileGrid.path_list[0][0],TileGrid.path_list[0][1],0,-1,1,10,1,[255,0,0])
 
@@ -241,7 +241,7 @@ if __name__ == '__main__':
             if event.type == QUIT:
                 running = False
             #controller.handle_pygame_event(event)
-        #model.update()
+        model.update()
         view.draw()
         time.sleep(.001)
     pygame.quit()

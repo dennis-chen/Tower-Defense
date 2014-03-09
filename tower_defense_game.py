@@ -8,6 +8,7 @@ import pygame
 from pygame.locals import *
 from random import *
 import math
+from math import atan2, degrees, pi
 import time
 import numpy as np
 
@@ -16,10 +17,14 @@ class TDModel:
     def __init__(self, tileGrid):
         self.tileGrid = tileGrid
         self.remaining_lives = 20
+        self.gold = 0
         self.creeplist = []
         self.pelletlist = []
+        self.towerList = []
 
     def update(self):
+        if pygame.time.get_ticks() % 2:
+            creep = Creep(TileGrid.path_list[0][0],TileGrid.path_list[0][1],0,-1,1,10,1,[255,0,0])
         print self.tileGrid.path_list
         if len(self.creeplist)<1:
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,2,10,0,[0,0,0])
@@ -112,7 +117,10 @@ class TileGrid:
     def return_creep_path(self):
         return self.path_list
         
-        
+    def snap_tower_to_grid(x,y):
+        """returns top left corner of the grid square that was clicked in"""
+        return ((x//40)*40,(y//40)*40)
+             
 class PathTile:
     image = pygame.image.load('pathTile.png') #
     def __init__(self):
@@ -123,14 +131,6 @@ class BlankTile:
     image = pygame.image.load('blankTile.png') #from 
     def __init__(self):
         self.color = (0,0,255)
-        
-class TowerTile:
-    def __init__(self,x,y):
-        self.x = x
-        self.y = y
-        self.level = 1
-        self.speed = 1
-        self.color = (0,255,0)
 
 class Creeps:
     """encodes the state of a creep within the game"""
@@ -201,8 +201,22 @@ class Creeps:
         
 class Tower:
     """encodes the state of a tower within the game"""
-    def __init__(self):
-        pass
+    image = pygame.image.load('Tower.png')
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
+        self.level = 1
+        self.speed = 1
+        self.angle = 0
+    
+    def set_angle(x,y):
+        """sets angle that the tower shoots at, measuring from the positive x-axis
+        like in typical polar coordinates fashion"""
+        dx = x - self.x
+        dy = y - self.y
+        rads = atan2(-dy,dx)
+        rads %= 2*pi
+        self.angle = degrees(rads)
         
 class Pellets:
     """encodes the state of a Lasers within the game"""
@@ -229,11 +243,26 @@ class Path:
         
 class PyGameWindowView:
     """renders TD model to game window"""
+    should_draw_instructions = False
+    instructions = ""
     def __init__(self,model,screen):
         self.model = model
         self.screen = screen
         
     #reference
+
+    def draw_lives_and_gold():
+        myfont = pygame.font.SysFont("monospace", 15)
+        lives_num = myfont.render(str(self.model.remaining_lives), 1, (255,255,255))
+        gold = myfont.render(str(self.model.gold), 1, (255,255,255))
+        screen.blit(lives_num, (100, 100))
+        screen.blit(gold, (200, 200))    
+            
+    def draw_instructions(message):
+        myfont = pygame.font.SysFont("monospace", 15)
+        text = myfont.render(message, 1, (255,255,255))
+        screen.blit(text, (0, 690))
+        
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
         grid = self.model.tileGrid.tiles
@@ -244,9 +273,17 @@ class PyGameWindowView:
                 pos = self.model.tileGrid.return_drawing_position(i,j)
                 self.screen.blit(obj.image,(pos[0], pos[1]))
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
+        gui = pygame.image.load('button_bar.png')    
+        self.screen.blit(gui,(0,640))
         for c in creeps:
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
+        for t in self.model.towerList:
+            self.screen.blit(t.image,(t.x,t.y))
+        self.draw_lives_and_gold()
+        if should_draw_instructions:
+            self.draw_instructions(instructions)
         pygame.display.update()
+
         
 #        for brick in self.model.bricks:
 #            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
@@ -256,22 +293,41 @@ class PyGameWindowView:
 
 #reference for mouse control
 class PyGameMouseController:
-    def __init__(self,model):
+    tower_place_mode = False
+    tower_aim_mode = False
+    current_tower = None
+    def __init__(self,model,view):
         self.model = model
     
     def handle_mouse_event(self,event):
-        if event.type == MOUSEMOTION:
-            self.model.paddle.x = event.pos[0] - self.model.paddle.width/2.0
+        x = event.pos[0]
+        y = event.pos[1]
+        if event.type == MOUSEBUTTONDOWN and not self.tower_place_mode and not self.tower_aim_mode and 0 < x < 50 and 640 < y < 690:
+                self.tower_place_mode = True
+                self.view.instructions = "Click somewhere in the grid to place your tower!"
+                self.view.should_draw_instructions = True
+        elif event.type == MOUSEBUTTONDOWN and self.tower_place_mode and 0 < y < 640 and not self.tower_aim_mode:
+            new_coords = self.model.tileGrid.snap_tower_to_grid(x,y)
+            self.current_tower = Tower(new_coords[0],new_coords[1])             
+            self.model.towerlist.add(self.current_tower)
+            self.view.instructions = "Now click somewhere to set the angle of your tower!"
+            self.view.should_draw_instructions = True
+            self.tower_place_mode = False
+            self.tower_aim_mode = True
+        elif event.type == MOUSEBUTTONDOWN and self.tower_aim_mode and 0 < y < 640 and not self.tower_place_mode:
+            self.current_tower.set_angle(x,y)
+            self.tower_aim_mode = False
+        
         
 if __name__ == '__main__':
     pygame.init()
     tile_grid = TileGrid()
-    size = (640,690)
+    size = (640,740)
     screen = pygame.display.set_mode(size)
 
     model = TDModel(tile_grid)
     view = PyGameWindowView(model,screen)
-    controller = PyGameMouseController(model)
+    controller = PyGameMouseController(model,view)
     running = True
     while running:
         for event in pygame.event.get():

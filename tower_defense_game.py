@@ -165,6 +165,9 @@ class PyGameWindowView:
     #reference
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
+        grid = self.model.tileGrid
+        for thing in grid:
+            
         
 #        for brick in self.model.bricks:
 #            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))

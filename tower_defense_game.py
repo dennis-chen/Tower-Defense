@@ -21,18 +21,16 @@ class TDModel:
 
     def update(self):
         print self.tileGrid.path_list
-        if len(self.creeplist)<2:
-            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,[0,0,0])
+        if len(self.creeplist)<1:
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,2,10,0,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
-            if c.checkpoint_index >= 5:
-                c.creep_death()
+            c.update()
+            if c.to_die == True:
+                self.creeplist.remove(c)
                 print "creep death"
-            else:
-                c.update()
             
-    def creep_death(creep):
-        creeplist.remove(creep)
+                
         
  #      if pygame.time.get_ticks() % 1: 
        #$#     pellet = Pellets(TileGrid.path_list[0][0],0,5,1,[0,0,0])
@@ -147,6 +145,7 @@ class Creeps:
         self.radius = radius
         self.checkpoint_index = checkpoint_index
         self.color=[randint(0,255),randint(0,255),randint(0,255)]
+        self.to_die = False
         
     def checkpoint_loc(self):
         """gets the checkpoint location from the list"""
@@ -173,20 +172,29 @@ class Creeps:
         ynew = self.vy + self.y
         xnode = self.checkpoint_loc()[0]
         ynode = self.checkpoint_loc()[1]
-        print "Step execute"
         if sign_arg(self.vy)*(ynew-ynode) > 0:
+            print "step y case"
             self.y = ynode
-            self.checkpoint_index +=1
-            self.vy = 0
-            newlocx = self.checkpoint_loc()[0]            
-            self.vx = self.speed*sign_arg(newlocx-self.x)
+            if self.checkpoint_index != 5:
+                self.checkpoint_index +=1           
+            else:
+                self.to_die = True
+            newlocx = self.checkpoint_loc()[0]       
+            newlocy = self.checkpoint_loc()[1]
+            self.vx = self.speed*sign_arg(newlocx-self.x)            
+            self.vy = self.speed*sign_arg(newlocy-self.y)
         elif self.vx*(xnew-xnode) > 0:
+            print "step x case"
             self.x = xnode
             self.checkpoint_index +=1
             self.vx = 0
             newlocy = self.checkpoint_loc()[1]
+            newlocx = self.checkpoint_loc()[0]
             self.vy = self.speed*sign_arg(newlocy-self.y)
+            self.vx = self.speed*sign_arg(newlocx-self.x) 
         else:
+            print "Step real execute %d" %self.vy
+            
             self.x += self.vx
             self.y += self.vy        
         

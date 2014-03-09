@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Sun Mar  9 03:38:28 2014
+
+@author: dchen
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Mar  6 23:46:34 2014
 
 @author: dchen,gcoleman,mbocamazo
@@ -14,29 +21,33 @@ import numpy as np
 
 class TDModel:
     """encodes the game state"""
+    tower_cost = 0
     def __init__(self, tileGrid):
         self.tileGrid = tileGrid
-        self.remaining_lives = 20
+        self.UI = UI()
         self.gold = 0
+        self.remaining_lives = 20
         self.creeplist = []
         self.pelletlist = []
-        self.towerList = []
 
     def update(self):
-        if pygame.time.get_ticks() % 2:
-            creep = Creep(TileGrid.path_list[0][0],TileGrid.path_list[0][1],0,-1,1,10,1,[255,0,0])
-        print self.tileGrid.path_list
+#        print self.tileGrid.path_list
         if len(self.creeplist)<1:
-            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,2,10,0,[0,0,0])
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,10,10,0,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
             c.update()
             if c.to_die == True:
                 self.creeplist.remove(c)
-                print "creep death"
-            
-                
-        
+#                print "creep death"
+        for i in range(0,16):
+            for j in range(0,16):
+                tile = self.tileGrid.tiles[i][j]
+                if isinstance(tile,TowerTile):
+                    tile.update()
+                    if tile.should_shoot:
+                        print str(tile) + "is shooting now!"
+                        tile.should_shoot = False
  #      if pygame.time.get_ticks() % 1: 
        #$#     pellet = Pellets(TileGrid.path_list[0][0],0,5,1,[0,0,0])
 #            self.pelletlist.append(pellet)
@@ -116,11 +127,11 @@ class TileGrid:
         
     def return_creep_path(self):
         return self.path_list
-        
-    def snap_tower_to_grid(x,y):
+    
+    def snap_tower_to_grid(self,x,y):
         """returns top left corner of the grid square that was clicked in"""
-        return ((x//40)*40,(y//40)*40)
-             
+        return ((x//40),(y//40))
+        
 class PathTile:
     image = pygame.image.load('pathTile.png') #
     def __init__(self):
@@ -131,6 +142,42 @@ class BlankTile:
     image = pygame.image.load('blankTile.png') #from 
     def __init__(self):
         self.color = (0,0,255)
+
+        
+class TowerTile:
+    """encodes the state of a tower within the game"""
+    image = pygame.image.load('Tower.png')
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
+        self.level = 1
+        self.speed = .2 #speed is given in pellets shot per second
+        self.angle = None
+        self.time_elapsed_since_last_action = 0
+        self.should_shoot = False
+        self.clock = pygame.time.Clock()
+        
+    def set_angle(self,x,y):
+        """sets angle that the tower shoots at, measuring from the positive x-axis
+        going CCW like in typical polar coordinates fashion. Code taken from stackoverflow"""
+        dx = x - (self.x+20)
+        dy = y - (self.y+20)
+        rads = atan2(-dy,dx)
+        rads %= 2*pi
+        self.angle = degrees(rads)
+        
+    def update(self):
+        if self.angle == None: #avoid shooting when the user hasn't set an angle yet
+            return
+        dt = self.clock.tick() 
+        self.time_elapsed_since_last_action += dt
+        if self.time_elapsed_since_last_action > (1000/self.speed):
+            self.should_shoot = True
+            self.time_elapsed_since_last_action = 0
+            
+        
+class UI:
+    image = pygame.image.load('button_bar.png')
 
 class Creeps:
     """encodes the state of a creep within the game"""
@@ -173,7 +220,7 @@ class Creeps:
         xnode = self.checkpoint_loc()[0]
         ynode = self.checkpoint_loc()[1]
         if sign_arg(self.vy)*(ynew-ynode) > 0:
-            print "step y case"
+#            print "step y case"
             self.y = ynode
             if self.checkpoint_index != 5:
                 self.checkpoint_index +=1           
@@ -184,7 +231,7 @@ class Creeps:
             self.vx = self.speed*sign_arg(newlocx-self.x)            
             self.vy = self.speed*sign_arg(newlocy-self.y)
         elif self.vx*(xnew-xnode) > 0:
-            print "step x case"
+#            print "step x case"
             self.x = xnode
             self.checkpoint_index +=1
             self.vx = 0
@@ -193,30 +240,10 @@ class Creeps:
             self.vy = self.speed*sign_arg(newlocy-self.y)
             self.vx = self.speed*sign_arg(newlocx-self.x) 
         else:
-            print "Step real execute %d" %self.vy
+#            print "Step real execute %d" %self.vy
             
             self.x += self.vx
             self.y += self.vy        
-        
-        
-class Tower:
-    """encodes the state of a tower within the game"""
-    image = pygame.image.load('Tower.png')
-    def __init__(self,x,y):
-        self.x = x
-        self.y = y
-        self.level = 1
-        self.speed = 1
-        self.angle = 0
-    
-    def set_angle(x,y):
-        """sets angle that the tower shoots at, measuring from the positive x-axis
-        like in typical polar coordinates fashion"""
-        dx = x - self.x
-        dy = y - self.y
-        rads = atan2(-dy,dx)
-        rads %= 2*pi
-        self.angle = degrees(rads)
         
 class Pellets:
     """encodes the state of a Lasers within the game"""
@@ -245,23 +272,23 @@ class PyGameWindowView:
     """renders TD model to game window"""
     should_draw_instructions = False
     instructions = ""
+    
     def __init__(self,model,screen):
         self.model = model
         self.screen = screen
         
-    #reference
-
-    def draw_lives_and_gold():
-        myfont = pygame.font.SysFont("monospace", 15)
+    def draw_lives_and_gold(self):
+        myfont = pygame.font.SysFont("monospace", 18, bold = True)
         lives_num = myfont.render(str(self.model.remaining_lives), 1, (255,255,255))
         gold = myfont.render(str(self.model.gold), 1, (255,255,255))
-        screen.blit(lives_num, (100, 100))
-        screen.blit(gold, (200, 200))    
-            
-    def draw_instructions(message):
-        myfont = pygame.font.SysFont("monospace", 15)
-        text = myfont.render(message, 1, (255,255,255))
-        screen.blit(text, (0, 690))
+        self.screen.blit(self.model.UI.image,(0, 640))        
+        screen.blit(lives_num, (520, 657))
+        screen.blit(gold, (310, 657))   
+    #reference
+    def draw_instructions(self):
+        myfont = pygame.font.SysFont("monospace", 18, bold = True)
+        text = myfont.render(self.instructions, 1, (255,255,255))
+        screen.blit(text, (20, 700))
         
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
@@ -273,17 +300,12 @@ class PyGameWindowView:
                 pos = self.model.tileGrid.return_drawing_position(i,j)
                 self.screen.blit(obj.image,(pos[0], pos[1]))
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
-        gui = pygame.image.load('button_bar.png')    
-        self.screen.blit(gui,(0,640))
         for c in creeps:
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
-        for t in self.model.towerList:
-            self.screen.blit(t.image,(t.x,t.y))
         self.draw_lives_and_gold()
-        if should_draw_instructions:
-            self.draw_instructions(instructions)
+        if self.should_draw_instructions:
+            self.draw_instructions()
         pygame.display.update()
-
         
 #        for brick in self.model.bricks:
 #            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
@@ -298,27 +320,36 @@ class PyGameMouseController:
     current_tower = None
     def __init__(self,model,view):
         self.model = model
+        self.view = view
     
     def handle_mouse_event(self,event):
-        x = event.pos[0]
-        y = event.pos[1]
-        if event.type == MOUSEBUTTONDOWN and not self.tower_place_mode and not self.tower_aim_mode and 0 < x < 50 and 640 < y < 690:
+        if event.type == MOUSEBUTTONDOWN:
+            x = event.pos[0]
+            y = event.pos[1]
+            print str(x)
+            print str(y)
+            if not self.tower_place_mode and not self.tower_aim_mode and 25 < x < 185 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
                 self.tower_place_mode = True
                 self.view.instructions = "Click somewhere in the grid to place your tower!"
                 self.view.should_draw_instructions = True
-        elif event.type == MOUSEBUTTONDOWN and self.tower_place_mode and 0 < y < 640 and not self.tower_aim_mode:
-            new_coords = self.model.tileGrid.snap_tower_to_grid(x,y)
-            self.current_tower = Tower(new_coords[0],new_coords[1])             
-            self.model.towerlist.add(self.current_tower)
-            self.view.instructions = "Now click somewhere to set the angle of your tower!"
-            self.view.should_draw_instructions = True
-            self.tower_place_mode = False
-            self.tower_aim_mode = True
-        elif event.type == MOUSEBUTTONDOWN and self.tower_aim_mode and 0 < y < 640 and not self.tower_place_mode:
-            self.current_tower.set_angle(x,y)
-            self.tower_aim_mode = False
-        
-        
+                pygame.mouse.set_cursor(*pygame.cursors.diamond)
+            elif self.tower_place_mode and not self.tower_aim_mode and 0 < y < 640:
+                tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
+                tower_pixel_pos = self.model.tileGrid.return_drawing_position(tower_snap_pos[0],tower_snap_pos[1])
+                if isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],BlankTile):
+                    self.current_tower = TowerTile(tower_pixel_pos[0],tower_pixel_pos[1])
+                    self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]] = self.current_tower
+                    self.tower_place_mode = False
+                    self.tower_aim_mode = True
+                    self.view.instructions = "Click where you would like your tower to aim!"
+            elif self.tower_aim_mode and 0 < y < 640:
+                self.current_tower.set_angle(x,y)
+                self.view.should_draw_instructions = False
+                pygame.mouse.set_cursor(*pygame.cursors.arrow)
+                self.tower_place_mode = False
+                self.tower_aim_mode = False
+                self.current_tower = None
+                
 if __name__ == '__main__':
     pygame.init()
     tile_grid = TileGrid()
@@ -332,8 +363,9 @@ if __name__ == '__main__':
     while running:
         for event in pygame.event.get():
             if event.type == QUIT:
+                pygame.mouse.set_cursor(*pygame.cursors.arrow)
                 running = False
-            #controller.handle_pygame_event(event)
+            controller.handle_mouse_event(event)
         model.update()
         view.draw()
         time.sleep(.001)

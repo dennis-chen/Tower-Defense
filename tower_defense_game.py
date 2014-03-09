@@ -13,6 +13,7 @@ import time
 class TDModel:
     """encodes the game state"""
     def __init__(self):
+        self.remaining_lives = remaining_lives
         return
 
 class TileGrid:
@@ -38,8 +39,17 @@ class Creeps:
     def update(self):
         """updates attributes of the creep, including size and color"""        
         step(self)
+    
+    def reach_goal(self):
+        """Method to remove from screen when creep reaches goal"""
+        TDModel.remaining_lives += -1
+        creep_death(self)
         
+    def creep_death(self):
+        """Method to execute when creep should be removed from screen"""
+        #remove creep from list of active creeps, undraw
         
+
     def step(self):
         """creep moves based on current velocity and checkpoint. creep moves
         amount specified by velocity, and increments counter if it will hit

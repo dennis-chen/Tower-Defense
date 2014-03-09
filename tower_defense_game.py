@@ -9,6 +9,7 @@ from pygame.locals import *
 import random
 import math
 import time
+import numpy
 
 class TDModel:
     """encodes the game state"""
@@ -18,11 +19,55 @@ class TDModel:
 class TileGrid:
     """encodes tower and path tiles"""
     def __init__(self):
-        return
+        self.tiles = np.empty( (16*16), dtype=object)
+        start_tile = PathTile()
+        y = 15
+        x = randint(1,15)
+        tiles[x][y] = start_tile
+        path_list = []
+        for i in range(0,randint(3,5)):
+            y-=1
+            tile = PathTile()
+            path_list.append(tile)
+            tiles[x][y] = tile
+        direction = random.choice([1,-1])
+        for i in range(0,randint(0,min(x-1,16-x-1))): #avoid going out of the grid in the x direction 
+            x-=direction
+            tile = PathTile()
+            path_list.append(tile)
+            tiles[x][y] = tile
+        for i in range(0,randint(3,5)):
+            y-=1
+            tile = PathTile()
+            path_list.append(tile)
+            tiles[x][y] = tile
+        for i in range(0,randint(0,min(x-1,16-x-1))): #avoid going out of the grid in the x direction 
+            x-=direction
+            tile = PathTile()
+            path_list.append(tile)
+            tiles[x][y] = tile
+        while y >= 0:
+            y-=1
+            tile = PathTile()
+            path_list.append(tile)
+            tiles[x][y] = tile
+            
+        
+        
+#class PathTile:
+#    
+#    def return_center_pos:    
+#    
+#class TowerTile:
+#    
+#    def__init__(self):
+#        self.level = 1
+#        self.speed = 1
 
 class Creeps:
     """encodes the state of a creep within the game"""
     path_list = None
+    
     def __init__(self,x,y,vx,vy,radius,checkpoint_x,checkpoint_y,num_of_sides,color):
         self.x = x
         self.y = y

@@ -23,26 +23,40 @@ class TileGrid:
 class Creeps:
     """encodes the state of a creep within the game"""
     path_list = None
-    def __init__(self,x,y,vx,vy,radius,checkpoint_x,checkpoint_y,num_of_sides,color):
+    def __init__(self,x,y,vx,vy,radius,checkpoint_index,num_of_sides,color):
         self.x = x
         self.y = y
         self.vx = vx
         self.vy = vy
         self.radius = self.radius
-        self.checkpoint_x = checkpoint_x
+        self.checkpoint_index = checkpoint_index;
+        
+    def checkpoint_loc(self):
+        """gets the checkpoint location from the list"""
+        return TDmodel.TileGrid.checkpoint_list[self.checkpoint_index]
         
     def update(self):
-        """updates attributes of the creep, including size and color"""
+        """updates attributes of the creep, including size and color"""        
+        step(self)
+        
         
     def step(self):
-        """creep moves based on current velocity and checkpoint. creep moves amount specified by velocity
-        knows that its going to overshoot the checkpoint."""
-        #if you won't overstep checkpoint
-        pass
-        self.x += self.vx
-        self.y += self.vy
-        #else step exactly the amount neccessary
-        
+        """creep moves based on current velocity and checkpoint. creep moves
+        amount specified by velocity, and increments counter if it will hit
+        checkpoint."""
+        checkselfx = self.vx + self.x
+        checkselfy = self.vy + self.y
+        locx = checkpoint_loc(self)[0]
+        locy = checkpoint_loc(self)[1]
+        if sign(vy)*(checkselfy-locy) > 0:
+            self.y = locy
+            self.checkpoint_index +=1
+        elif sign(vx)*(checkselfx-locx) > 0:
+            self.x = locx
+            self.checkpoint_index +=1
+        else:
+            self.x += self.vx
+            self.y += self.vy        
         
         
 class Tower:
@@ -56,8 +70,8 @@ class Pellets:
         pass
         
     def step(self):
-        """creep moves based on current velocity and checkpoint. creep moves amount specified by velocity
-        knows that its going to overshoot the checkpoint."""
+        """pellet moves based on current velocity and checkpoint. pellet
+        moves amount specified by velocity knows that its going to overshoot the checkpoint."""
         pass
         self.x += self.vx
         self.y += self.vy

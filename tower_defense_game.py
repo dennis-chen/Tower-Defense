@@ -16,8 +16,11 @@ class TDModel:
     def __init__(self, tileGrid):
         self.tileGrid = tileGrid
         self.remaining_lives = 20
-        return
 
+    def update():
+        if pygame.time.get_ticks() % 2:
+            creep = Creep(TileGrid.path_list[0][0],TileGrid.path_list[0][1],0,-1,1,10,1,[255,0,0])
+,x,y,vx,vy,speed,radius,checkpoint_index,num_of_sides,color)
 def collision_check_full(x1,y1,x2,y2,r1,r2):
     """checks if two circles collide, returns boolean"""
     dist_squared = (x2-x1)**2+(y2-y1)**2
@@ -89,7 +92,7 @@ class Creeps:
     """encodes the state of a creep within the game"""
     path_list = None
 
-    def __init__(self,x,y,vx,vy,speed,radius,checkpoint_index,num_of_sides,color):
+    def __init__(self,x,y,vx,vy,speed,radius,checkpoint_index,color):
         self.x = x
         self.y = y
         self.vx = 0
@@ -170,7 +173,6 @@ class PyGameWindowView:
     #reference
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
-        
 #        for brick in self.model.bricks:
 #            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
 #        pygame.draw.rect(self.screen, pygame.Color(self.model.paddle.color[0], self.model.paddle.color[1], self.model.paddle.color[2]), pygame.Rect(self.model.paddle.x, self.model.paddle.y, self.model.paddle.width, self.model.paddle.height))
@@ -185,7 +187,7 @@ class PyGameMouseController:
     def handle_mouse_event(self,event):
         if event.type == MOUSEMOTION:
             self.model.paddle.x = event.pos[0] - self.model.paddle.width/2.0
-
+        
 if __name__ == '__main__':
     pygame.init()
     tile_grid = TileGrid()

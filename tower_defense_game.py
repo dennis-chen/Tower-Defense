@@ -6,10 +6,10 @@ Created on Thu Mar  6 23:46:34 2014
 """
 import pygame
 from pygame.locals import *
-import random
+from random import *
 import math
 import time
-import numpy
+import numpy as np
 
 class TDModel:
     """encodes the game state"""

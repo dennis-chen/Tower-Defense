@@ -47,7 +47,7 @@ class TDModel:
             if p.should_delete == True:
                 self.pelletlist.remove(p)
         if len(self.creeplist)<1:
-            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,10,10,0,[0,0,0])
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,3,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
             c.update()
@@ -188,7 +188,7 @@ class Creeps:
     """encodes the state of a creep within the game"""
     path_list = None
 
-    def __init__(self,x,y,vx,vy,speed,radius,checkpoint_index,color):
+    def __init__(self,x,y,vx,vy,speed,radius,checkpoint_index,health,color):
         self.x = x
         self.y = y
         self.vx = 0
@@ -196,7 +196,8 @@ class Creeps:
         self.speed = speed
         self.radius = radius
         self.checkpoint_index = checkpoint_index
-        self.color=[randint(0,255),randint(0,255),randint(0,255)]
+        self.health = health
+        self.color=[60*(3-self.health),self.health*60,0]      
         self.to_die = False
         
     def checkpoint_loc(self):
@@ -204,8 +205,11 @@ class Creeps:
         return model.tileGrid.path_list[self.checkpoint_index]
         
     def update(self):
-        """updates attributes of the creep, including size and color"""        
+        """updates attributes of the creep, including size and color based on health"""        
         self.step()
+        self.color=[60*(3-self.health),self.health*60,0]   
+        if self.health < 1:
+            self.to_die = True
     
     def reach_goal(self):
         """Method to remove from screen when creep reaches goal"""
@@ -292,16 +296,27 @@ class Pellet:
         self.check_collision_and_remove_creeps(model)
         self.step()
         
-    def check_collision_and_remove_creeps(model):
+    def check_collision_and_remove_creeps(self,model):
         """to decrease the number of checks that need to happen, only bullets 
-        that are on the creep path will be checked at all!"""        
-        tile_location = model.tilegrid.snap_tower_location(self.x,self.y)
-        if isinstance(model.tilegrid.tiles[tile_location[0],tile_location[1]],PathTile):
+        that are on the creep path will be checked at all! It's possible to find multiple colliding
+        creeps but the one that will be removed is the first creep in the list (e.x. creeps that have
+        been around longer anyway)"""        
+        tile_location = model.tileGrid.snap_tower_to_grid(self.x,self.y)
+        if isinstance(model.tileGrid.tiles[tile_location[0],tile_location[1]],PathTile):
             creeps = model.creeplist
-            
+            index = 0
+            found_colliding_creep = False
+            while index < len(creeps) and not found_colliding_creep:
+                c = creeps[index]         
+                if self.do_circles_overlap(self.x,self.y,self.radius,c.x,c.y,c.radius):
+                    c.health -= 1 
+                    self.should_delete = True
+                    found_colliding_creep = True
+                index += 1
+                
         
-    def do_circles_overlap(x1,y1,r1,x2,y2,r2):
-        pass
+    def do_circles_overlap(self,x1,y1,r1,x2,y2,r2):
+        return (x2 - x1)**2 + (y2-y1)**2 <= (r1+r2)**2
     
 class Path:
     """list of positions within the grid"""

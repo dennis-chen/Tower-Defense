@@ -20,18 +20,39 @@ class TDModel:
         self.pelletlist = []
 
     def update(self):
-        if pygame.time.get_ticks() % 2:
-            creep = Creep(TileGrid.path_list[0][0],TileGrid.path_list[0][1],0,-1,1,10,1,[255,0,0])
-
-
+        print self.tileGrid.path_list
+        if (pygame.time.get_ticks()) % 4:
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,[0,0,0])
+            self.creeplist.append(creep)
+        for c in self.creeplist:
+            if c.checkpoint_index >= 5:
+                c.creep_death()
+                print "creep death"
+            else:
+                c.update()
+            
+    def creep_death(creep):
+        creeplist.remove(creep)
         
+ #      if pygame.time.get_ticks() % 1: 
+       #$#     pellet = Pellets(TileGrid.path_list[0][0],0,5,1,[0,0,0])
+#            self.pelletlist.append(pellet)
 def collision_check_full(x1,y1,x2,y2,r1,r2):
     """checks if two circles collide, returns boolean"""
     dist_squared = (x2-x1)**2+(y2-y1)**2
     return dist_squared < (r1+r2)**2
     
+def sign_arg(x):
+    if x>0:
+        return 1
+    elif x<0:
+        return -1
+    else:
+        return 0
+    
 class TileGrid:
     """encodes tower and path tiles"""
+    path_list = []
     def __init__(self):
         self.tiles = np.empty( [16,16], dtype=object)
         self.tiles.fill(BlankTile())
@@ -122,16 +143,18 @@ class Creeps:
         self.y = y
         self.vx = 0
         self.vy = speed
-        self.radius = self.radius
-        self.checkpoint_index = checkpoint_index;
+        self.speed = speed
+        self.radius = radius
+        self.checkpoint_index = checkpoint_index
+        self.color=[10*speed,1*speed,5*speed]
         
     def checkpoint_loc(self):
         """gets the checkpoint location from the list"""
-        return TDmodel.TileGrid.checkpoint_list[self.checkpoint_index]
+        return model.tileGrid.path_list[self.checkpoint_index]
         
     def update(self):
         """updates attributes of the creep, including size and color"""        
-        step(self)
+        self.step()
     
     def reach_goal(self):
         """Method to remove from screen when creep reaches goal"""
@@ -148,20 +171,21 @@ class Creeps:
         checkpoint."""
         checkselfx = self.vx + self.x
         checkselfy = self.vy + self.y
-        locx = checkpoint_loc(self)[0]
-        locy = checkpoint_loc(self)[1]
-        if sign(vy)*(checkselfy-locy) > 0:
+        locx = self.checkpoint_loc()[0]
+        locy = self.checkpoint_loc()[1]
+        print "Step execute"
+        if self.vy*(checkselfy-locy) >= 0:
             self.y = locy
             self.checkpoint_index +=1
             self.vy = 0
-            newlocx = checkpoint_loc(self)[0]
-            self.vx = speed*sign(newlocx-self.x)
-        elif sign(vx)*(checkselfx-locx) > 0:
+            newlocx = self.checkpoint_loc()[0]            
+            self.vx = self.speed*sign_arg(newlocx-self.x)
+        elif self.vx*(checkselfx-locx) > 0:
             self.x = locx
             self.checkpoint_index +=1
             self.vx = 0
-            newlocy = checkpoint_loc(self)[1]
-            self.vy = speed*sign(newlocy-self.y)
+            newlocy = self.checkpoint_loc()[1]
+            self.vy = self.speed*sign_arg(newlocy-self.y)
         else:
             self.x += self.vx
             self.y += self.vy        
@@ -174,8 +198,14 @@ class Tower:
         
 class Pellets:
     """encodes the state of a Lasers within the game"""
-    def __init__(self):
-        pass
+    def __init__(self,x,y,vx,vy,radius,damage,color):
+        self.x = x
+        self.y = y
+        self.vx = vx
+        self.vy = vy
+        self.radius = 5
+        self.damage=1
+        self.color=[10*damage,1*damage,5*damage]
         
     def step(self):
         """pellet moves based on current velocity and checkpoint. pellet
@@ -232,7 +262,6 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
 
     model = TDModel(tile_grid)
-    print tile_grid.return_creep_path()
     view = PyGameWindowView(model,screen)
     controller = PyGameMouseController(model)
     running = True

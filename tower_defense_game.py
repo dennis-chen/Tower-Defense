@@ -17,13 +17,11 @@ class TDModel:
         self.tileGrid = tileGrid
         self.remaining_lives = 20
         return
-        
-
 
 def collision_check_full(x1,y1,x2,y2,r1,r2):
     """checks if two circles collide, returns boolean"""
-    dist_squared = (x2-x1)^2+(y2-y1)^2
-    return dist_squared < r1+r2
+    dist_squared = (x2-x1)**2+(y2-y1)**2
+    return dist_squared < (r1+r2)**2
     
 class TileGrid:
     """encodes tower and path tiles"""

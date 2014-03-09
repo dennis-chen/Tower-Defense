@@ -21,11 +21,11 @@ import numpy as np
 
 class TDModel:
     """encodes the game state"""
-    tower_cost = 0
     def __init__(self, tileGrid):
+        self.tower_cost = 1
         self.tileGrid = tileGrid
         self.UI = UI()
-        self.gold = 0
+        self.gold = 100
         self.remaining_lives = 20
         self.creeplist = []
         self.pelletlist = []
@@ -307,13 +307,6 @@ class PyGameWindowView:
             self.draw_instructions()
         pygame.display.update()
         
-#        for brick in self.model.bricks:
-#            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
-#        pygame.draw.rect(self.screen, pygame.Color(self.model.paddle.color[0], self.model.paddle.color[1], self.model.paddle.color[2]), pygame.Rect(self.model.paddle.x, self.model.paddle.y, self.model.paddle.width, self.model.paddle.height))
-#        
-        
-
-#reference for mouse control
 class PyGameMouseController:
     tower_place_mode = False
     tower_aim_mode = False
@@ -339,6 +332,7 @@ class PyGameMouseController:
                 if isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],BlankTile):
                     self.current_tower = TowerTile(tower_pixel_pos[0],tower_pixel_pos[1])
                     self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]] = self.current_tower
+                    self.model.gold -= self.model.tower_cost
                     self.tower_place_mode = False
                     self.tower_aim_mode = True
                     self.view.instructions = "Click where you would like your tower to aim!"

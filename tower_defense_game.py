@@ -88,10 +88,12 @@ class TileGrid:
         
         
 class PathTile:
+    image = pygame.image.load('pathTile.png') #
     def __init__(self):
         self.color = (255,0,0)
         
 class BlankTile:
+    image = pygame.image.load('blankTile.png') #from 
     def __init__(self):
         self.color = (0,0,255)
         
@@ -193,7 +195,8 @@ class PyGameWindowView:
             for j in range(16):
                 obj = grid[i][j]
                 pos = self.model.tileGrid.return_drawing_position(i,j)
-                pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
+                self.screen.blit(obj.image,(pos[0], pos[1]))
+                #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         pygame.display.update()
 #        for brick in self.model.bricks:
 #            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))

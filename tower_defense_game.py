@@ -15,7 +15,7 @@ import pygame
 from pygame.locals import *
 from random import *
 import math
-from math import atan2, degrees, pi
+from math import atan2, degrees, pi, sin, cos, radians
 import time
 import numpy as np
 
@@ -32,6 +32,20 @@ class TDModel:
 
     def update(self):
 #        print self.tileGrid.path_list
+        for i in range(0,16):
+            for j in range(0,16):
+                tile = self.tileGrid.tiles[i][j]
+                if isinstance(tile,TowerTile):
+                    tile.update()
+                    if tile.should_shoot:
+                        pellet_pos = self.tileGrid.return_center(i,j)
+                        self.pelletlist.append(Pellet(pellet_pos[0],pellet_pos[1],10*sin(radians(tile.angle +90)),10*cos(radians(tile.angle + 90)),tile.damage))
+                        #    def __init__(self,x,y,vx,vy,damage):
+                        tile.should_shoot = False
+        for p in self.pelletlist: 
+            p.update(self) #pass the pellet a creeplist so it knows if it will collide and it can mark creeps for deletion later
+            if p.should_delete == True:
+                self.pelletlist.remove(p)
         if len(self.creeplist)<1:
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,10,10,0,[0,0,0])
             self.creeplist.append(creep)
@@ -39,15 +53,6 @@ class TDModel:
             c.update()
             if c.to_die == True:
                 self.creeplist.remove(c)
-#                print "creep death"
-        for i in range(0,16):
-            for j in range(0,16):
-                tile = self.tileGrid.tiles[i][j]
-                if isinstance(tile,TowerTile):
-                    tile.update()
-                    if tile.should_shoot:
-                        print str(tile) + "is shooting now!"
-                        tile.should_shoot = False
  #      if pygame.time.get_ticks() % 1: 
        #$#     pellet = Pellets(TileGrid.path_list[0][0],0,5,1,[0,0,0])
 #            self.pelletlist.append(pellet)
@@ -150,8 +155,8 @@ class TowerTile:
     def __init__(self,x,y):
         self.x = x
         self.y = y
-        self.level = 1
-        self.speed = .2 #speed is given in pellets shot per second
+        self.damage = 1
+        self.speed = 2 #speed is given in pellets shot per second
         self.angle = None
         self.time_elapsed_since_last_action = 0
         self.should_shoot = False
@@ -245,24 +250,59 @@ class Creeps:
             self.x += self.vx
             self.y += self.vy        
         
-class Pellets:
-    """encodes the state of a Lasers within the game"""
-    def __init__(self,x,y,vx,vy,radius,damage,color):
+class Pellet:
+    """encodes the state of a bullet within the game"""
+    def __init__(self,x,y,vx,vy,damage):
         self.x = x
         self.y = y
         self.vx = vx
         self.vy = vy
         self.radius = 5
-        self.damage=1
+        self.damage= damage
         self.color=[10*damage,1*damage,5*damage]
+        self.should_delete = False
         
     def step(self):
-        """pellet moves based on current velocity and checkpoint. pellet
-        moves amount specified by velocity knows that its going to overshoot the checkpoint."""
-        pass
-        self.x += self.vx
-        self.y += self.vy
+        """pellet moves based on current velocity."""
+        if self.x == 620 or self.x == 20 or self.y == 620 or self.y == 20:
+            self.should_delete = True
+            return
+        distances = self.find_dist_from_edges()
+        initial_x = self.x
+        initial_y = self.y
+        if self.vx > distances[3]:
+            self.x = 620
+        elif self.vx < -distances[2]:
+            self.x = 20
+        if self.vy > distances[1]:
+            self.y = 620
+        elif self.vy < -distances[0]:
+            self.y = 20
+        if self.x == initial_x:
+            self.x += self.vx
+        if self.y == initial_y:
+            self.y += self.vy
         
+    def find_dist_from_edges(self):
+        """returns how far the edge of the circular pellet is from all four edges
+        in the order of dist from top, bottom, left, and right"""
+        return (self.y-20,640-(self.y+20),self.x-20,640-(self.x+20))
+        
+    def update(self,model):
+        self.check_collision_and_remove_creeps(model)
+        self.step()
+        
+    def check_collision_and_remove_creeps(model):
+        """to decrease the number of checks that need to happen, only bullets 
+        that are on the creep path will be checked at all!"""        
+        tile_location = model.tilegrid.snap_tower_location(self.x,self.y)
+        if isinstance(model.tilegrid.tiles[tile_location[0],tile_location[1]],PathTile):
+            creeps = model.creeplist
+            
+        
+    def do_circles_overlap(x1,y1,r1,x2,y2,r2):
+        pass
+    
 class Path:
     """list of positions within the grid"""
     def __init__(self):
@@ -294,6 +334,7 @@ class PyGameWindowView:
         self.screen.fill(pygame.Color(0,0,0))
         grid = self.model.tileGrid.tiles
         creeps = self.model.creeplist
+        pellets = self.model.pelletlist
         for i in range(16):
             for j in range(16):
                 obj = grid[i][j]
@@ -302,6 +343,8 @@ class PyGameWindowView:
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         for c in creeps:
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
+        for p in pellets:
+            pygame.draw.circle(self.screen,pygame.Color(p.color[0],p.color[1],p.color[2]),(int(p.x),int(p.y)),p.radius)
         self.draw_lives_and_gold()
         if self.should_draw_instructions:
             self.draw_instructions()

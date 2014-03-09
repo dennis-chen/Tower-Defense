@@ -16,6 +16,8 @@ class TDModel:
     def __init__(self, tileGrid):
         self.tileGrid = tileGrid
         self.remaining_lives = 20
+        self.creeplist = []
+        self.pelletlist = []
         return
         
 def collision_check_full(x1,y1,x2,y2,r1,r2):
@@ -91,13 +93,10 @@ class PathTile:
     def __init__(self):
         self.color = (255,0,0)
         
-<<<<<<< HEAD
-                        
-=======
+                
 class BlankTile:
     def __init__(self):
         self.color = (0,0,255)
->>>>>>> 9dd750eac2c3efb1c8af7934fce134de3e8483e3
         
 class TowerTile:
     def __init__(self,x,y):
@@ -193,12 +192,16 @@ class PyGameWindowView:
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
         grid = self.model.tileGrid.tiles
+        creeps = self.model.creeplist
         for i in range(16):
             for j in range(16):
                 obj = grid[i][j]
                 pos = self.model.tileGrid.return_drawing_position(i,j)
                 pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
+        for creep in creeps:
+            
         pygame.display.update()
+        
 #        for brick in self.model.bricks:
 #            pygame.draw.rect(self.screen, pygame.Color(brick.color[0], brick.color[1], brick.color[2]), pygame.Rect(brick.x, brick.y, brick.width, brick.height))
 #        pygame.draw.rect(self.screen, pygame.Color(self.model.paddle.color[0], self.model.paddle.color[1], self.model.paddle.color[2]), pygame.Rect(self.model.paddle.x, self.model.paddle.y, self.model.paddle.width, self.model.paddle.height))

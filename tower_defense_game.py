@@ -153,18 +153,26 @@ class SimpleCreepGen:
         self.add_creep = False
         self.new_creep = None
         self.time_elapsed = 0
-    
+        self.time_elapsed_k = 0
+        self.start_delay = 5
+        self.delay = True
+        
     def update(self):    
-        self.time_elapsed += self.clock.tick()
-        if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds        
-            self.hp_spd_prod += 0.1    
-            hp = randint(1,int(self.hp_spd_prod))
-            spd = 1+self.hp_spd_prod/hp
-            self.new_creep = (hp,spd)
-            self.add_creep = True
-            self.time_elapsed = 0
+        if self.delay:            
+            self.time_elapsed_k += self.clock.tick()
+            if self.time_elapsed_k > self.start_delay*1000:
+                self.delay=False
         else:
-            self.add_creep = False
+            self.time_elapsed += self.clock.tick()
+            if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds        
+                self.hp_spd_prod += 0.1    
+                hp = randint(1,int(self.hp_spd_prod))
+                spd = 1+self.hp_spd_prod/hp
+                self.new_creep = (hp,spd)
+                self.add_creep = True
+                self.time_elapsed = 0
+            else:
+                self.add_creep = False
         
 
 class WaveGenerator:

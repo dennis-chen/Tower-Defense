@@ -180,10 +180,9 @@ class SimpleCreepGen:
                 self.delay=False
         else:
             self.time_elapsed += self.clock.tick()
-            if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds        
-
+            if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds       
                 self.hp_spd_prod += 0.1
-                self.launch_speed +=.05
+                self.launch_speed +=.01
                 hp = randint(1,int(self.hp_spd_prod))
                 spd = 1+self.hp_spd_prod/hp
                 self.new_creep = (hp,spd)

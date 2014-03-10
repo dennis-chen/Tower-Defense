@@ -26,11 +26,11 @@ class TDModel:
         self.tileGrid = tileGrid
         self.UI = UI()
         self.endSprite = EndScreen()
-        self.gold = 20
+        self.gold = 30
         self.price_tower=10
         self.price_damage=10
         self.price_rate=5
-        self.remaining_lives = 20
+        self.remaining_lives = 1
         self.creeplist = []
         self.pelletlist = []
         self.score = 0
@@ -407,10 +407,13 @@ class PyGameWindowView:
     should_draw_instructions_line2 =False
     instructions = ""
     instructions2=""
+    get_score = True
     
     def __init__(self,model,screen):
         self.model = model
         self.screen = screen
+        self.get_score = True
+        self.final_score = 0
         
     def draw_lives_and_gold(self):
         myfont = pygame.font.SysFont("monospace", 24, bold = True)
@@ -434,11 +437,16 @@ class PyGameWindowView:
     def draw(self):
         if self.model.game_over == True:
             self.screen.fill(pygame.Color(0,0,0))
+            if self.get_score:
+                self.final_score = self.model.score
+                self.get_score = False
             myfont = pygame.font.SysFont("monospace", 60, bold = True)
             text = myfont.render('SWAG ON YOU BRUH', 1, (randint(0,255),randint(0,255),randint(0,255)))
             lose = myfont.render('YOU LOES!', 1, (randint(0,255),randint(0,255),randint(0,255)))
+            score_text = myfont.render('SCORE: %d' %(self.final_score), 1, (randint(0,255),randint(0,255),randint(0,255)))
             self.screen.blit(text, (0+randint(0,2), 320+randint(0,2)))
-            self.screen.blit(lose, (200+randint(0,2), 500+randint(0,2)))
+            self.screen.blit(lose, (200+randint(0,2), 460+randint(0,2)))
+            self.screen.blit(score_text, (100+randint(0,2), 600+randint(0,2)))
             self.screen.blit(self.model.endSprite.image,(200+randint(0,2), 10+randint(0,2)))    
             pygame.display.update()            
         else:

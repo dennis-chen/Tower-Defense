@@ -511,8 +511,6 @@ class PyGameMouseController:
         if event.type == MOUSEBUTTONDOWN:
             x = event.pos[0]
             y = event.pos[1]
-            print str(x)
-            print str(y)
             tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
             if not self.tower_place_mode and not self.tower_aim_mode and 7 < x < 170 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
                 self.tower_place_mode = True
@@ -553,7 +551,6 @@ class PyGameMouseController:
             self.view.should_draw_instructions = True
             if event.key == pygame.K_d:
                 self.selected_tower.damage +=1
-                print self.selected_tower.damage
                 self.tower_upgrade_mode = False
                 self.view.should_draw_instructions = False
                 self.view.should_draw_instructions_line2 = False

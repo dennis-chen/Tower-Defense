@@ -157,7 +157,8 @@ class SimpleCreepGen:
     def update(self):    
         self.time_elapsed += self.clock.tick()
         if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds        
-            self.hp_spd_prod += 0.1    
+            self.hp_spd_prod += 0.1  
+            self.launch_speed += 0.01  
             hp = randint(1,int(self.hp_spd_prod))
             spd = 1+self.hp_spd_prod/hp
             self.new_creep = (hp,spd)
@@ -261,7 +262,9 @@ class TowerTile:
         if self.time_elapsed_since_last_action > (1000/self.speed):
             self.should_shoot = True
             self.time_elapsed_since_last_action = 0
-            
+    
+    def damage_upgrade(self):
+        self.damage +=1
         
 class UI:
     image = pygame.image.load('button_bar.png')
@@ -348,7 +351,7 @@ class Pellet:
         self.vy = vy
         self.radius = 5
         self.damage= damage
-        self.color=[10*damage,1*damage,5*damage]
+        self.color=[10*damage,0,0]
         self.should_delete = False
         
     def step(self):
@@ -380,7 +383,7 @@ class Pellet:
     def update(self,model):
         self.check_collision_and_remove_creeps(model)
         self.step()
-        
+        self.color=[10*self.damage,0,0]
         
     def check_collision_and_remove_creeps(self,model):
         """to decrease the number of checks that need to happen, only bullets 
@@ -395,7 +398,7 @@ class Pellet:
             while index < len(creeps) and not found_colliding_creep:
                 c = creeps[index]         
                 if self.do_circles_overlap(self.x,self.y,self.radius,c.x,c.y,c.radius):
-                    c.health -= 1 
+                    c.health -= self.damage 
                     self.should_delete = True
                     found_colliding_creep = True
                 index += 1
@@ -412,7 +415,9 @@ class Path:
 class PyGameWindowView:
     """renders TD model to game window"""
     should_draw_instructions = False
+    should_draw_instructions_line2 =False
     instructions = ""
+    instructions2=""
     
     def __init__(self,model,screen):
         self.model = model
@@ -429,7 +434,11 @@ class PyGameWindowView:
     def draw_instructions(self):
         myfont = pygame.font.SysFont("monospace", 18, bold = True)
         text = myfont.render(self.instructions, 1, (255,255,255))
-        screen.blit(text, (20, 700))
+        screen.blit(text, (20, 690))
+    def draw_instructions_line2(self):
+        myfont2 = pygame.font.SysFont("monospace", 18, bold = True)
+        text2 = myfont2.render(self.instructions2, 1, (255,255,255))
+        screen.blit(text2, (20, 720))
         
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0))
@@ -447,13 +456,14 @@ class PyGameWindowView:
                         pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)),2)
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         for c in creeps:
-          
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
         for p in pellets:
             pygame.draw.circle(self.screen,pygame.Color(p.color[0],p.color[1],p.color[2]),(int(p.x),int(p.y)),p.radius)
         self.draw_lives_and_gold()
         if self.should_draw_instructions:
             self.draw_instructions()
+        if self.should_draw_instructions_line2:
+            self.draw_instructions_line2()
         pygame.display.update()
         
 class PyGameMouseController:
@@ -465,7 +475,7 @@ class PyGameMouseController:
     def __init__(self,model,view):
         self.model = model
         self.view = view
-    
+        self.TowerTile= TowerTile
     def handle_mouse_event(self,event):
         if event.type == MOUSEBUTTONDOWN:
             x = event.pos[0]
@@ -478,6 +488,7 @@ class PyGameMouseController:
                 self.tower_upgrade_mode=False
                 self.view.instructions = "Click anywhere in the green area to place your tower! Towere Cost 50 gold"
                 self.view.should_draw_instructions = True
+                self.view.should_draw_instructions_line2 = True
                 pygame.mouse.set_cursor(*pygame.cursors.diamond)
             elif self.tower_place_mode and not self.tower_aim_mode and 0 < y < 640:
                 tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
@@ -492,6 +503,7 @@ class PyGameMouseController:
             elif self.tower_aim_mode and 0 < y < 640:
                 self.current_tower.set_angle(x,y)
                 self.view.should_draw_instructions = False
+                self.view.should_draw_instructions_line2 = False
                 pygame.mouse.set_cursor(*pygame.cursors.arrow)
                 self.tower_place_mode = False
                 self.tower_aim_mode = False
@@ -499,17 +511,23 @@ class PyGameMouseController:
             elif self.tower_upgrade_mode== True and 0 < y < 640: #Cancels upgrade mode if you click anywhere
                 self.tower_upgrade_mode=False
                 self.view.should_draw_instructions = False
+                self.view.should_draw_instructions_line2 = False
             elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode:
                 self.selected_tower=self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]]
                 self.view.should_draw_instructions = True
+                self.view.should_draw_instructions_line2 = True
                 self.tower_upgrade_mode=True
                 self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
+                self.view.instructions2 = "Upgraded Damage"+ "(25$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate:" + "(15$):"
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
             self.view.should_draw_instructions = True
-            if event.key == pygame.K_d:            
-                print self.selected_tower
+            if event.key == pygame.K_d:
+                self.selected_tower.damage +=1
+                print self.selected_tower.damage
                 self.tower_upgrade_mode = False
                 self.view.should_draw_instructions = False
+                self.view.should_draw_instructions_line2 = False
+                
 if __name__ == '__main__':
     pygame.init()
     tile_grid = TileGrid()

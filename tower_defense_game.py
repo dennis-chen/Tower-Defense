@@ -26,6 +26,9 @@ class TDModel:
         self.tileGrid = tileGrid
         self.UI = UI()
         self.gold = 100
+        self.price_tower=10
+        self.price_damage=10
+        self.price_rate=5
         self.remaining_lives = 20
         self.creeplist = []
         self.pelletlist = []
@@ -244,7 +247,7 @@ class TowerTile:
         self.time_elapsed_since_last_action = 0
         self.should_shoot = False
         self.clock = pygame.time.Clock()
-
+        
     def set_angle(self,x,y):
         """sets angle that the tower shoots at, measuring from the positive x-axis
         going CCW like in typical polar coordinates fashion. Code taken from stackoverflow"""
@@ -286,9 +289,9 @@ class Creeps:
         self.checkpoint_index = 0
         self.health = health
         if speed <= 25:
-            self.color=[255-10*speed,255,255]  
+            self.color=[255-10*speed,255,255]
         else:
-            self.color=[255,255,255]  
+            self.color=[255,255,255]
         self.to_die = False
         
     def checkpoint_loc(self):
@@ -296,7 +299,7 @@ class Creeps:
         return model.tileGrid.path_list[self.checkpoint_index]
         
     def update(self):
-        """updates attributes of the creep, including size and color based on health"""        
+        """updates attributes of the creep, including size and color based on health"""
         self.step()
         self.radius=int(5+self.health/2)
         if self.health < 1:
@@ -309,38 +312,38 @@ class Creeps:
               
     def step(self):
         """creep moves based on current velocity and checkpoint. creep moves
-        amount specified by velocity, and increments counter if it will hit
-        checkpoint."""
+amount specified by velocity, and increments counter if it will hit
+checkpoint."""
         xnew = self.vx + self.x
         ynew = self.vy + self.y
         xnode = self.checkpoint_loc()[0]
         ynode = self.checkpoint_loc()[1]
         if sign_arg(self.vy)*(ynew-ynode) > 0:
-#            print "step y case"
+# print "step y case"
             self.y = ynode
             if self.checkpoint_index != 5:
-                self.checkpoint_index +=1           
+                self.checkpoint_index +=1
             else:
                 self.to_die = True
                 model.remaining_lives += -1
-            newlocx = self.checkpoint_loc()[0]       
+            newlocx = self.checkpoint_loc()[0]
             newlocy = self.checkpoint_loc()[1]
-            self.vx = self.speed*sign_arg(newlocx-self.x)            
+            self.vx = self.speed*sign_arg(newlocx-self.x)
             self.vy = self.speed*sign_arg(newlocy-self.y)
         elif self.vx*(xnew-xnode) > 0:
-#            print "step x case"
+# print "step x case"
             self.x = xnode
             self.checkpoint_index +=1
             self.vx = 0
             newlocy = self.checkpoint_loc()[1]
             newlocx = self.checkpoint_loc()[0]
             self.vy = self.speed*sign_arg(newlocy-self.y)
-            self.vx = self.speed*sign_arg(newlocx-self.x) 
+            self.vx = self.speed*sign_arg(newlocx-self.x)
         else:
-#            print "Step real execute %d" %self.vy
+# print "Step real execute %d" %self.vy
             
             self.x += self.vx
-            self.y += self.vy        
+            self.y += self.vy      
         
 class Pellet:
     """encodes the state of a bullet within the game"""
@@ -351,7 +354,10 @@ class Pellet:
         self.vy = vy
         self.radius = 5
         self.damage= damage
-        self.color=[10*damage,0,0]
+        cR = min([25*damage,255])
+        cG = min([max([25*damage-255,0]),255])
+        cB = min([max([25*damage-510,0]),255])
+        self.color=[cR,cG,cB]
         self.should_delete = False
         
     def step(self):
@@ -382,9 +388,12 @@ class Pellet:
         
     def update(self,model):
         self.check_collision_and_remove_creeps(model)
+        dmg = self.damage
+        cR = min([25*dmg,255])
+        cG = min([max([25*dmg-255,0]),255])
+        cB = min([max([25*dmg-510,0]),255])
+        self.color=[cR,cG,cB]
         self.step()
-        self.color=[10*self.damage,0,0]
-        
     def check_collision_and_remove_creeps(self,model):
         """to decrease the number of checks that need to happen, only bullets 
         that are on the creep path will be checked at all! It's possible to find multiple colliding
@@ -469,24 +478,24 @@ class PyGameWindowView:
 class PyGameMouseController:
     tower_place_mode = False
     tower_aim_mode = False
-    tower_upgrade_mode = False
     current_tower = None
-    selected_tower=None
+    tower_upgrade_mode= False
     def __init__(self,model,view):
         self.model = model
         self.view = view
         self.TowerTile= TowerTile
+       
     def handle_mouse_event(self,event):
         if event.type == MOUSEBUTTONDOWN:
             x = event.pos[0]
             y = event.pos[1]
-            tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
             print str(x)
             print str(y)
+            tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
+            self.tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
             if not self.tower_place_mode and not self.tower_aim_mode and 25 < x < 185 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
                 self.tower_place_mode = True
-                self.tower_upgrade_mode=False
-                self.view.instructions = "Click anywhere in the green area to place your tower! Towere Cost 50 gold"
+                self.view.instructions = "Click somewhere in the grid to place your tower!"
                 self.view.should_draw_instructions = True
                 self.view.should_draw_instructions_line2 = True
                 pygame.mouse.set_cursor(*pygame.cursors.diamond)
@@ -518,7 +527,7 @@ class PyGameMouseController:
                 self.view.should_draw_instructions_line2 = True
                 self.tower_upgrade_mode=True
                 self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
-                self.view.instructions2 = "Upgraded Damage"+ "(25$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate:" + "(15$):"
+                self.view.instructions2 = "Upgraded Damage"+ "("+ +"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate:" + "(15$):"
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
             self.view.should_draw_instructions = True
             if event.key == pygame.K_d:

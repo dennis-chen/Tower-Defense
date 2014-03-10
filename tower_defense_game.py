@@ -154,7 +154,7 @@ class TileGrid:
         return ((x//40),(y//40))
         
 class SimpleCreepGen:
-    """Simplified generator of creeps"""
+    """Simplified generator of creeps, stages creeps to be added to the model"""
     def __init__(self):
         self.hp_spd_prod = 2
         self.clock = pygame.time.Clock()
@@ -167,6 +167,8 @@ class SimpleCreepGen:
         self.delay = True
         
     def update(self):    
+        """Checks if the delay has elapsed, then generates a creep every
+        1/launch_speed with hp and speed increasing"""
         if self.delay:            
             self.time_elapsed_k += self.clock.tick()
             if self.time_elapsed_k > self.start_delay*1000:
@@ -182,62 +184,7 @@ class SimpleCreepGen:
                 self.time_elapsed = 0
             else:
                 self.add_creep = False
-        
-
-class WaveGenerator:
-    """Handles the wave generation"""
-    def __init__(self):
-        self.wave_list = []
-        self.push_list = []
-        self.number_of_creeps = 10
-        self.duration = 1
-        self.hp_spd_prod = 2
-        self.clock = pygame.time.Clock()
-        
-    def addWave(self,number_of_creeps, hp_spd_prod, duration):
-        self.wave_list.append(Wave(number_of_creeps, hp_spd_prod, duration))
-        
-    def update(self):
-#        self.push_list = []
-        if len(self.wave_list)==0:
-            self.hp_spd_prod += 1
-            self.addWave(self.number_of_creeps,self.hp_spd_prod,self.duration)
-        for creep_wave in self.wave_list:
-            if len(creep_wave.wave_sched) == 0:
-                self.wave_list.remove(creep_wave)
-            elif creep_wave.push_creep:
-                self.push_list.append(creep_wave.pushed_creep)
-                
-    
-class Wave:
-    """Encodes a wave, returns a list of hp-speed tuples"""
-    def __init__(self, number_of_creeps, hp_spd_prod, launch_speed):
-        self.number_of_creeps = number_of_creeps
-        self.hp_spd_prod = hp_spd_prod
-        self.launch_speed = launch_speed 
-        self.wave_sched = self.generate_sched()
-        self.clock = pygame.time.Clock()
-        self.time_elapsed = 0
-        self.push_creep = False
-        self.pushed_creep = None
-    
-    def generate_sched(self):
-        schedule = []
-        for i in range(self.number_of_creeps):
-            hp = randint(1,int(self.hp_spd_prod))
-            spd = 1+self.hp_spd_prod/hp
-            schedule.append((hp,spd))      
-        return schedule
-    
-    def update(self):
-        self.time_elapsed += self.clock.tick()
-        if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds
-            self.pushed_creep = self.wave_sched.pop()
-            self.push_creep = True
-            self.time_elapsed = 0
-        else:
-            self.push_creep = False
-            
+                  
 class PathTile:
     image = pygame.image.load('pathTile.png') #
     def __init__(self):

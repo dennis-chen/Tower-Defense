@@ -26,7 +26,7 @@ class TDModel:
         self.tileGrid = tileGrid
         self.UI = UI()
         self.endSprite = EndScreen()
-        self.gold = 20
+        self.gold = 30
         self.price_tower=10
         self.price_damage=10
         self.price_rate=5

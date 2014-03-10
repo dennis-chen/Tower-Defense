@@ -243,7 +243,7 @@ class TowerTile:
         self.time_elapsed_since_last_action = 0
         self.should_shoot = False
         self.clock = pygame.time.Clock()
-
+        
     def set_angle(self,x,y):
         """sets angle that the tower shoots at, measuring from the positive x-axis
         going CCW like in typical polar coordinates fashion. Code taken from stackoverflow"""
@@ -276,16 +276,10 @@ class Creeps:
         self.vx = 0
         self.vy = -speed
         self.speed = speed
-        if health<=26:
-            self.radius = int(5+health/2)
-        else:
-            self.radius= 18
-        self.checkpoint_index = 0
+        self.radius = radius
+        self.checkpoint_index = checkpoint_index
         self.health = health
-        if speed <= 25:
-            self.color=[255-10*speed,255,255]  
-        else:
-            self.color=[255,255,255]  
+        self.color=[60*(3-self.health),self.health*60,0]      
         self.to_die = False
         
     def checkpoint_loc(self):
@@ -295,7 +289,7 @@ class Creeps:
     def update(self):
         """updates attributes of the creep, including size and color based on health"""        
         self.step()
-        self.radius=int(5+self.health/2)
+        self.color=[60*(3-self.health),self.health*60,0]   
         if self.health < 1:
             self.to_die = True
     
@@ -348,7 +342,10 @@ class Pellet:
         self.vy = vy
         self.radius = 5
         self.damage= damage
-        self.color=[10*damage,1*damage,5*damage]
+        cR = min([25*damage,255])
+        cG = min([max([25*damage-255,0]),255])
+        cB = min([max([25*damage-510,0]),255])
+        self.color=[cR,cG,cB]
         self.should_delete = False
         
     def step(self):
@@ -379,8 +376,12 @@ class Pellet:
         
     def update(self,model):
         self.check_collision_and_remove_creeps(model)
+        dmg = self.damage
+        cR = min([25*dmg,255])
+        cG = min([max([25*dmg-255,0]),255])
+        cB = min([max([25*dmg-510,0]),255])
+        self.color=[cR,cG,cB]
         self.step()
-        
         
     def check_collision_and_remove_creeps(self,model):
         """to decrease the number of checks that need to happen, only bullets 
@@ -447,7 +448,6 @@ class PyGameWindowView:
                         pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)),2)
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         for c in creeps:
-          
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
         for p in pellets:
             pygame.draw.circle(self.screen,pygame.Color(p.color[0],p.color[1],p.color[2]),(int(p.x),int(p.y)),p.radius)
@@ -459,9 +459,7 @@ class PyGameWindowView:
 class PyGameMouseController:
     tower_place_mode = False
     tower_aim_mode = False
-    tower_upgrade_mode = False
     current_tower = None
-    selected_tower=None
     def __init__(self,model,view):
         self.model = model
         self.view = view
@@ -470,13 +468,11 @@ class PyGameMouseController:
         if event.type == MOUSEBUTTONDOWN:
             x = event.pos[0]
             y = event.pos[1]
-            tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
             print str(x)
             print str(y)
             if not self.tower_place_mode and not self.tower_aim_mode and 25 < x < 185 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
                 self.tower_place_mode = True
-                self.tower_upgrade_mode=False
-                self.view.instructions = "Click anywhere in the green area to place your tower! Towere Cost 50 gold"
+                self.view.instructions = "Click somewhere in the grid to place your tower!"
                 self.view.should_draw_instructions = True
                 pygame.mouse.set_cursor(*pygame.cursors.diamond)
             elif self.tower_place_mode and not self.tower_aim_mode and 0 < y < 640:
@@ -496,20 +492,7 @@ class PyGameMouseController:
                 self.tower_place_mode = False
                 self.tower_aim_mode = False
                 self.current_tower = None
-            elif self.tower_upgrade_mode== True and 0 < y < 640: #Cancels upgrade mode if you click anywhere
-                self.tower_upgrade_mode=False
-                self.view.should_draw_instructions = False
-            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode:
-                self.selected_tower=self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]]
-                self.view.should_draw_instructions = True
-                self.tower_upgrade_mode=True
-                self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
-        elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
-            self.view.should_draw_instructions = True
-            if event.key == pygame.K_d:            
-                print self.selected_tower
-                self.tower_upgrade_mode = False
-                self.view.should_draw_instructions = False
+                
 if __name__ == '__main__':
     pygame.init()
     tile_grid = TileGrid()

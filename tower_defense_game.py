@@ -26,7 +26,7 @@ class TDModel:
         self.tileGrid = tileGrid
         self.UI = UI()
         self.endSprite = EndScreen()
-        self.gold = 100
+        self.gold = 20
         self.price_tower=10
         self.price_damage=10
         self.price_rate=5
@@ -168,7 +168,7 @@ class SimpleCreepGen:
         self.new_creep = None
         self.time_elapsed = 0
         self.time_elapsed_k = 0
-        self.start_delay = 5
+        self.start_delay = 7
         self.delay = True
         
     def update(self):    
@@ -181,8 +181,9 @@ class SimpleCreepGen:
         else:
             self.time_elapsed += self.clock.tick()
             if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds        
-                self.hp_spd_prod += 0.1  
-                self.launch_speed += 0.05
+
+                self.hp_spd_prod += 0.1
+                self.launch_speed +=.05
                 hp = randint(1,int(self.hp_spd_prod))
                 spd = 1+self.hp_spd_prod/hp
                 self.new_creep = (hp,spd)
@@ -211,7 +212,7 @@ class TowerTile:
         self.x = x
         self.y = y
         self.damage = 1
-        self.speed = 2 #speed is given in pellets shot per second
+        self.speed = 1 #speed is given in pellets shot per second
         self.angle = None
         self.damage_max=False
         self.rate_max=False
@@ -259,7 +260,8 @@ class Creeps:
         self.vx = 0
         self.vy = -speed
         self.speed = speed
-        self.radius = min([18,int(5+health/2)])
+
+        self.radius=min([18,int(5+health/2)])
         self.checkpoint_index = 0
         self.health = health
         if speed <= 25:
@@ -529,19 +531,22 @@ class PyGameMouseController:
                     self.view.instructions2 = "Upgraded Damage: Maxed Out" + "   Upgraded Rate: Maxed Out"
          
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
-            if event.key == pygame.K_d and self.selected_tower.damage<=9:
+            if event.key == pygame.K_d and self.selected_tower.damage<=3 and self.model.gold >= 10:
+                self.model.gold -= 10                
                 self.selected_tower.damage +=1
                 self.tower_upgrade_mode = False
                 self.view.should_draw_instructions = False
                 self.view.should_draw_instructions_line2 = False
-                if self.selected_tower.damage>9:
+                if self.selected_tower.damage>3:
                     self.selected_tower.damage_max=True
-            if event.key == pygame.K_f and self.selected_tower.speed<=4.6:
+
+            if event.key == pygame.K_f and self.selected_tower.speed<=2 and self.model.gold >= 5:
+                self.model.gold -= 5                
                 self.selected_tower.speed *=1.1
                 self.tower_upgrade_mode = False
                 self.view.should_draw_instructions = False
                 self.view.should_draw_instructions_line2 = False
-                if self.selected_tower.speed>4.6:
+                if self.selected_tower.speed>2:
                     self.selected_tower.rate_max=True
                 
 if __name__ == '__main__':

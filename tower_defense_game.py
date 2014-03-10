@@ -29,8 +29,8 @@ class TDModel:
         self.remaining_lives = 20
         self.creeplist = []
         self.pelletlist = []
-        self.waveform = WaveGenerator()
-
+        self.waveform = SimpleCreepGen()
+        
     def update(self):
 #        print self.tileGrid.path_list
         for i in range(0,16):
@@ -48,9 +48,14 @@ class TDModel:
             if p.should_delete == True:
                 self.pelletlist.remove(p)
         self.waveform.update()
-        for c in self.waveform.push_list:
-            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,c[1],10,0,c[0],[0,0,0])
-            self.creeplist.append(creep)            
+        if self.waveform.add_creep:
+            health = int(self.waveform.new_creep[0])
+            speed = int(self.waveform.new_creep[1])
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,speed,10,0,health,[0,0,0])
+            self.creeplist.append(creep)   
+#        for c in self.waveform.push_list:
+#            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,c[1],10,0,c[0],[0,0,0])
+#            self.creeplist.append(creep)            
         for c in self.creeplist:
             c.update()
             if c.to_die == True:
@@ -138,6 +143,29 @@ class TileGrid:
     def snap_tower_to_grid(self,x,y):
         """returns top left corner of the grid square that was clicked in"""
         return ((x//40),(y//40))
+        
+class SimpleCreepGen:
+    """Simplified generator of creeps"""
+    def __init__(self):
+        self.hp_spd_prod = 2
+        self.clock = pygame.time.Clock()
+        self.launch_speed = 1
+        self.add_creep = False
+        self.new_creep = None
+        self.time_elapsed = 0
+    
+    def update(self):    
+        self.time_elapsed += self.clock.tick()
+        if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds        
+            self.hp_spd_prod += 0.1    
+            hp = randint(1,int(self.hp_spd_prod))
+            spd = 1+self.hp_spd_prod/hp
+            self.new_creep = (hp,spd)
+            self.add_creep = True
+            self.time_elapsed = 0
+        else:
+            self.add_creep = False
+        
 
 class WaveGenerator:
     """Handles the wave generation"""
@@ -153,26 +181,23 @@ class WaveGenerator:
         self.wave_list.append(Wave(number_of_creeps, hp_spd_prod, duration))
         
     def update(self):
-        self.push_list = []
+#        self.push_list = []
         if len(self.wave_list)==0:
             self.hp_spd_prod += 1
             self.addWave(self.number_of_creeps,self.hp_spd_prod,self.duration)
-        else:
-            for creep_wave in self.wave_list:
-                if len(creep_wave.wave_sched) == 0:
-                    self.wave_list.remove(creep_wave)
-                elif creep_wave.push_creep:
-                    self.push_list.append(creep_wave.pushed_creep)
+        for creep_wave in self.wave_list:
+            if len(creep_wave.wave_sched) == 0:
+                self.wave_list.remove(creep_wave)
+            elif creep_wave.push_creep:
+                self.push_list.append(creep_wave.pushed_creep)
                 
     
 class Wave:
-    """Encodes a wave, returns a list of hp-speed-gentime tuples
-    note gentime in this case constant"""
-    def __init__(self, number_of_creeps, hp_spd_prod, duration):
+    """Encodes a wave, returns a list of hp-speed tuples"""
+    def __init__(self, number_of_creeps, hp_spd_prod, launch_speed):
         self.number_of_creeps = number_of_creeps
         self.hp_spd_prod = hp_spd_prod
-        self.duration = duration
-        self.dt = self.number_of_creeps/self.duration    
+        self.launch_speed = launch_speed 
         self.wave_sched = self.generate_sched()
         self.clock = pygame.time.Clock()
         self.time_elapsed = 0
@@ -183,18 +208,16 @@ class Wave:
         schedule = []
         for i in range(self.number_of_creeps):
             hp = randint(1,int(self.hp_spd_prod))
-            speed = 1+self.hp_spd_prod/hp
-            gentime = self.dt
-            schedule.append((hp,speed,gentime))      
+            spd = 1+self.hp_spd_prod/hp
+            schedule.append((hp,spd))      
         return schedule
     
     def update(self):
-        dT = self.clock.tick()
-        self.time_elapsed += dT
-        if self.time_elapsed_since_last_action > (self.dt): #conversion to seconds
+        self.time_elapsed += self.clock.tick()
+        if self.time_elapsed > (1000/self.launch_speed): #conversion to seconds
             self.pushed_creep = self.wave_sched.pop()
             self.push_creep = True
-            self.time_elapsed_since_last_action = 0
+            self.time_elapsed = 0
         else:
             self.push_creep = False
             

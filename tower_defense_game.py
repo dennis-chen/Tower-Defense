@@ -46,7 +46,7 @@ class TDModel:
             p.update(self) #pass the pellet a creeplist so it knows if it will collide and it can mark creeps for deletion later
             if p.should_delete == True:
                 self.pelletlist.remove(p)
-        if len(self.creeplist)<1:
+        if len(self.creeplist)<5:
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,3,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
@@ -214,12 +214,8 @@ class Creeps:
     def reach_goal(self):
         """Method to remove from screen when creep reaches goal"""
         TDModel.remaining_lives += -1
-        creep_death(self)
-        
-    def creep_death(self):
-        """Method to execute when creep should be removed from screen"""
-        #remove creep from list of active creeps, undraw
-        
+
+              
     def step(self):
         """creep moves based on current velocity and checkpoint. creep moves
         amount specified by velocity, and increments counter if it will hit
@@ -235,6 +231,7 @@ class Creeps:
                 self.checkpoint_index +=1           
             else:
                 self.to_die = True
+                model.remaining_lives += -1
             newlocx = self.checkpoint_loc()[0]       
             newlocy = self.checkpoint_loc()[1]
             self.vx = self.speed*sign_arg(newlocx-self.x)            

@@ -46,7 +46,7 @@ class TDModel:
             p.update(self) #pass the pellet a creeplist so it knows if it will collide and it can mark creeps for deletion later
             if p.should_delete == True:
                 self.pelletlist.remove(p)
-        if len(self.creeplist)<5:
+        if len(self.creeplist)<50:
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,3,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
@@ -68,6 +68,8 @@ def sign_arg(x):
         return -1
     else:
         return 0
+
+
     
 class TileGrid:
     """encodes tower and path tiles"""
@@ -265,20 +267,20 @@ class Pellet:
         
     def step(self):
         """pellet moves based on current velocity."""
-        if self.x == 620 or self.x == 20 or self.y == 620 or self.y == 20:
+        if self.x == 630 or self.x == 10 or self.y == 630 or self.y == 10:
             self.should_delete = True
             return
         distances = self.find_dist_from_edges()
         initial_x = self.x
         initial_y = self.y
         if self.vx > distances[3]:
-            self.x = 620
+            self.x = 630
         elif self.vx < -distances[2]:
-            self.x = 20
+            self.x = 10
         if self.vy > distances[1]:
-            self.y = 620
+            self.y = 630
         elif self.vy < -distances[0]:
-            self.y = 20
+            self.y = 10
         if self.x == initial_x:
             self.x += self.vx
         if self.y == initial_y:
@@ -287,7 +289,7 @@ class Pellet:
     def find_dist_from_edges(self):
         """returns how far the edge of the circular pellet is from all four edges
         in the order of dist from top, bottom, left, and right"""
-        return (self.y-20,640-(self.y+20),self.x-20,640-(self.x+20))
+        return (self.y-10,640-(self.y+10),self.x-10,640-(self.x+10))
         
     def update(self,model):
         self.check_collision_and_remove_creeps(model)
@@ -355,7 +357,7 @@ class PyGameWindowView:
                 if isinstance(obj,TowerTile):
                     if obj.angle != None:
                         angle = radians(obj.angle + 90)
-                        pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)))
+                        pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)),2)
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         for c in creeps:
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)

@@ -22,7 +22,7 @@ import numpy as np
 class TDModel:
     """encodes the game state"""
     def __init__(self, tileGrid):
-        self.tower_cost = 1
+        self.tower_cost = 10
         self.tileGrid = tileGrid
         self.UI = UI()
         self.endSprite = EndScreen()
@@ -68,6 +68,7 @@ class TDModel:
             c.update()
             if c.to_die == True:
                 self.creeplist.remove(c)
+                self.gold += 2
         self.score = int(self.waveform.hp_spd_prod-1)
  #      if pygame.time.get_ticks() % 1: 
        #$#     pellet = Pellets(TileGrid.path_list[0][0],0,5,1,[0,0,0])
@@ -514,7 +515,8 @@ class PyGameMouseController:
             tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
             if not self.tower_place_mode and not self.tower_aim_mode and 7 < x < 170 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
                 self.tower_place_mode = True
-                self.view.instructions = "Click somewhere in the grid to place your tower!"
+                self.view.instructions2 = ""
+                self.view.instructions = "Click somewhere in the grid to place your tower! ($10)"
                 self.view.should_draw_instructions = True
                 self.view.should_draw_instructions_line2 = True
                 pygame.mouse.set_cursor(*pygame.cursors.diamond)
@@ -550,10 +552,12 @@ class PyGameMouseController:
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
             self.view.should_draw_instructions = True
             if event.key == pygame.K_d:
-                self.selected_tower.damage +=1
-                self.tower_upgrade_mode = False
-                self.view.should_draw_instructions = False
-                self.view.should_draw_instructions_line2 = False
+                if model.gold >= 10:
+                    self.model.gold -= 10
+                    self.selected_tower.damage +=1
+                    self.tower_upgrade_mode = False
+                    self.view.should_draw_instructions = False
+                    self.view.should_draw_instructions_line2 = False
                 
 if __name__ == '__main__':
     pygame.init()

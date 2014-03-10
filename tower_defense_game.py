@@ -25,6 +25,7 @@ class TDModel:
         self.tower_cost = 1
         self.tileGrid = tileGrid
         self.UI = UI()
+        self.endSprite = EndScreen()
         self.gold = 100
         self.price_tower=10
         self.price_damage=10
@@ -32,10 +33,14 @@ class TDModel:
         self.remaining_lives = 20
         self.creeplist = []
         self.pelletlist = []
+        self.score = 0
+        self.game_over = False
         self.waveform = SimpleCreepGen()
         
     def update(self):
 #        print self.tileGrid.path_list
+        if self.remaining_lives <= 0:
+            self.game_over = True
         for i in range(0,16):
             for j in range(0,16):
                 tile = self.tileGrid.tiles[i][j]
@@ -63,6 +68,7 @@ class TDModel:
             c.update()
             if c.to_die == True:
                 self.creeplist.remove(c)
+        self.score = int(self.waveform.hp_spd_prod-1)
  #      if pygame.time.get_ticks() % 1: 
        #$#     pellet = Pellets(TileGrid.path_list[0][0],0,5,1,[0,0,0])
 #            self.pelletlist.append(pellet)
@@ -271,6 +277,9 @@ class TowerTile:
         
 class UI:
     image = pygame.image.load('button_bar.png')
+    
+class EndScreen:
+    image = pygame.image.load('end_screen_sprite.png')
 
 class Creeps:
     """encodes the state of a creep within the game"""
@@ -433,12 +442,14 @@ class PyGameWindowView:
         self.screen = screen
         
     def draw_lives_and_gold(self):
-        myfont = pygame.font.SysFont("monospace", 18, bold = True)
+        myfont = pygame.font.SysFont("monospace", 24, bold = True)
         lives_num = myfont.render(str(self.model.remaining_lives), 1, (255,255,255))
         gold = myfont.render(str(self.model.gold), 1, (255,255,255))
+        score = myfont.render(str(self.model.score), 1, (255,255,255))         
         self.screen.blit(self.model.UI.image,(0, 640))        
-        screen.blit(lives_num, (520, 657))
-        screen.blit(gold, (310, 657))   
+        screen.blit(lives_num, (323, 653))
+        screen.blit(gold, (461, 653))   
+        screen.blit(score,(598, 653))
     #reference
     def draw_instructions(self):
         myfont = pygame.font.SysFont("monospace", 18, bold = True)
@@ -447,32 +458,43 @@ class PyGameWindowView:
     def draw_instructions_line2(self):
         myfont2 = pygame.font.SysFont("monospace", 18, bold = True)
         text2 = myfont2.render(self.instructions2, 1, (255,255,255))
-        screen.blit(text2, (20, 720))
+        screen.blit(text2, (20, 719))
         
     def draw(self):
-        self.screen.fill(pygame.Color(0,0,0))
-        grid = self.model.tileGrid.tiles
-        creeps = self.model.creeplist
-        pellets = self.model.pelletlist
-        for i in range(16):
-            for j in range(16):
-                obj = grid[i][j]
-                pos = self.model.tileGrid.return_drawing_position(i,j)
-                self.screen.blit(obj.image,(pos[0], pos[1]))
-                if isinstance(obj,TowerTile):
-                    if obj.angle != None:
-                        angle = radians(obj.angle + 90)
-                        pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)),2)
-                #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
-        for c in creeps:
-            pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
-        for p in pellets:
-            pygame.draw.circle(self.screen,pygame.Color(p.color[0],p.color[1],p.color[2]),(int(p.x),int(p.y)),p.radius)
-        self.draw_lives_and_gold()
-        if self.should_draw_instructions:
-            self.draw_instructions()
-        if self.should_draw_instructions_line2:
-            self.draw_instructions_line2()
+        if self.model.game_over == True:
+            self.screen.fill(pygame.Color(0,0,0))
+            myfont = pygame.font.SysFont("monospace", 60, bold = True)
+            text = myfont.render('SWAG ON YOU BRUH', 1, (randint(0,255),randint(0,255),randint(0,255)))
+            lose = myfont.render('YOU LOES!', 1, (randint(0,255),randint(0,255),randint(0,255)))
+            self.screen.blit(text, (0+randint(0,2), 320+randint(0,2)))
+            self.screen.blit(lose, (200+randint(0,2), 500+randint(0,2)))
+            self.screen.blit(self.model.endSprite.image,(200+randint(0,2), 10+randint(0,2)))    
+            pygame.display.update()            
+        else:
+            self.screen.fill(pygame.Color(0,0,0))
+            grid = self.model.tileGrid.tiles
+            creeps = self.model.creeplist
+            pellets = self.model.pelletlist
+            for i in range(16):
+                for j in range(16):
+                    obj = grid[i][j]
+                    pos = self.model.tileGrid.return_drawing_position(i,j)
+                    self.screen.blit(obj.image,(pos[0], pos[1]))
+                    if isinstance(obj,TowerTile):
+                        if obj.angle != None:
+                            angle = radians(obj.angle + 90)
+                            pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)),2)
+                    #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
+            for c in creeps:
+                pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
+            for p in pellets:
+                pygame.draw.circle(self.screen,pygame.Color(p.color[0],p.color[1],p.color[2]),(int(p.x),int(p.y)),p.radius)
+            self.draw_lives_and_gold()
+            if self.should_draw_instructions:
+                self.draw_instructions()
+        
+            if self.should_draw_instructions_line2:
+                self.draw_instructions_line2()
         pygame.display.update()
         
 class PyGameMouseController:
@@ -492,8 +514,7 @@ class PyGameMouseController:
             print str(x)
             print str(y)
             tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
-            self.tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
-            if not self.tower_place_mode and not self.tower_aim_mode and 25 < x < 185 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
+            if not self.tower_place_mode and not self.tower_aim_mode and 7 < x < 170 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
                 self.tower_place_mode = True
                 self.view.instructions = "Click somewhere in the grid to place your tower!"
                 self.view.should_draw_instructions = True
@@ -527,7 +548,7 @@ class PyGameMouseController:
                 self.view.should_draw_instructions_line2 = True
                 self.tower_upgrade_mode=True
                 self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
-                self.view.instructions2 = "Upgraded Damage"+ "("+ +"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate:" + "(15$):"
+                self.view.instructions2 = "Upgraded Damage"+ "("+ "10"+"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate" + "(5$):"
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
             self.view.should_draw_instructions = True
             if event.key == pygame.K_d:

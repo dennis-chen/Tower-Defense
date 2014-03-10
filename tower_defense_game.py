@@ -43,7 +43,7 @@ class TDModel:
 #        print self.tileGrid.path_list
         if self.remaining_lives <= 0:
             self.game_over = True
-        for i in range(0,16):
+        for i in range(0,16):   #look for towertiles and update towertiles/shoot bullets if they are supposed to
             for j in range(0,16):
                 tile = self.tileGrid.tiles[i][j]
                 if isinstance(tile,TowerTile):
@@ -53,7 +53,7 @@ class TDModel:
                         self.pelletlist.append(Pellet(pellet_pos[0],pellet_pos[1],10*sin(radians(tile.angle +90)),10*cos(radians(tile.angle + 90)),tile.damage,tile))
                         #    def __init__(self,x,y,vx,vy,damage):
                         tile.should_shoot = False
-        for p in self.pelletlist: 
+        for p in self.pelletlist: #draw bullets
             p.update(self) #pass the pellet a creeplist so it knows if it will collide and it can mark creeps for deletion later
             if p.should_delete == True:
                 self.pelletlist.remove(p)
@@ -65,7 +65,7 @@ class TDModel:
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,speed,10,0,health,[0,0,0])
             self.creeplist.append(creep)           
 #        run through the creep list to print them 
-        for c in self.creeplist:
+        for c in self.creeplist: #move creeps and remove them if they are marked for death
             c.update()
             if c.to_die == True:
                 self.creeplist.remove(c)
@@ -96,23 +96,23 @@ class TileGrid:
         start_tile = PathTile()
         y = 15
         x = randint(1,15)
-        self.tiles[x][y] = start_tile
+        self.tiles[x][y] = start_tile   #choose random starting tile at bottom of screen
         path_list = []
-        path_list.append(self.return_center(x,y))
-        for i in range(0,randint(3,5)):
+        path_list.append(self.return_center(x,y)) #convert tile entries to coordinates in pygame for creep to follow
+        for i in range(0,randint(3,5)): #moves up a random distance
             y-=1
             tile = PathTile()
             self.tiles[x][y] = tile
         path_list.append(self.return_center(x,y))
         rand_x = x
-        while rand_x == x:
+        while rand_x == x:  #choose new x tile location to move to that isn't the current one
             rand_x = randint(1,15)
         step = 1
         if rand_x < x:
             step = -1
         else:
             step = 1
-        for i in range(x,rand_x,step): #avoid going out of the grid in the x direction 
+        for i in range(x,rand_x,step): #move to that new x tile location, adding every tile in the grid to the "path" along the way
             x += (rand_x - x)/abs(rand_x - x)
             tile = PathTile()
             self.tiles[x][y] = tile
@@ -135,7 +135,7 @@ class TileGrid:
             tile = PathTile()
             self.tiles[x][y] = tile
         path_list.append(self.return_center(x,y))
-        while y > 0:
+        while y > 0:    #travel until you hit the edge of the screen
             y-=1
             tile = PathTile()
             self.tiles[x][y] = tile
@@ -232,7 +232,7 @@ class TowerTile:
         """updates whether a tower should shoot or not, based on the clock"""
         if self.angle == None: #avoid shooting when the user hasn't set an angle yet
             return
-        dt = self.clock.tick() 
+        dt = self.clock.tick() #count elapsed time since last shot, shoots and resets counter if certain time has passed
         self.time_elapsed_since_last_action += dt
         if self.time_elapsed_since_last_action > (1000/self.speed):
             self.should_shoot = True
@@ -339,13 +339,13 @@ class Pellet:
         
     def step(self):
         """pellet moves based on current velocity."""
-        if self.x == 630 or self.x == 10 or self.y == 630 or self.y == 10:
+        if self.x == 630 or self.x == 10 or self.y == 630 or self.y == 10: #delete particles at edges of the screen
             self.should_delete = True
             return
         distances = self.find_dist_from_edges()
         initial_x = self.x
         initial_y = self.y
-        if self.vx > distances[3]:
+        if self.vx > distances[3]:  #if vx is going to move the particle off the edge of the screen, just move it to the very edge instead
             self.x = 630
         elif self.vx < -distances[2]:
             self.x = 10
@@ -354,7 +354,7 @@ class Pellet:
         elif self.vy < -distances[0]:
             self.y = 10
         if self.x == initial_x:
-            self.x += self.vx
+            self.x += self.vx #move like normal if it isn't going to collide with edges 
         if self.y == initial_y:
             self.y += self.vy
         
@@ -381,7 +381,7 @@ class Pellet:
         been around longer anyway)"""        
         tile_location = model.tileGrid.snap_tower_to_grid(self.x,self.y)
         checked_tile = model.tileGrid.tiles[tile_location[0],tile_location[1]]
-        if isinstance(checked_tile,TowerTile) and checked_tile != self.tower:
+        if isinstance(checked_tile,TowerTile) and checked_tile != self.tower: #removes pellets that collide with towers that aren't the ones that generated the pellet
             self.should_delete = True
             return
         if isinstance(checked_tile,PathTile):
@@ -477,18 +477,21 @@ class PyGameWindowView:
         pygame.display.update()
         
 class PyGameMouseController:
+    """Takes Mouse Control Input"""
     tower_place_mode = False
     tower_aim_mode = False
     current_tower = None
     tower_upgrade_mode= False
 
-    def __init__(self,model,view):
+    def __init__(self,model,view): 
+        """initialize the class"""
         self.model = model
         self.view = view
         self.TowerTile= TowerTile
        
-    def handle_mouse_event(self,event):
-        if event.type == MOUSEBUTTONDOWN:
+    def handle_mouse_event(self,event): 
+        """"builds and upgrades towers"""" 
+        if event.type == MOUSEBUTTONDOWN: #if mouse is clicked
             x = event.pos[0]
             y = event.pos[1]
             tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)

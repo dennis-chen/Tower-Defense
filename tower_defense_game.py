@@ -469,18 +469,21 @@ class PyGameWindowView:
         pygame.display.update()
         
 class PyGameMouseController:
+    """Takes Mouse Control Input"""
     tower_place_mode = False
     tower_aim_mode = False
     current_tower = None
     tower_upgrade_mode= False
 
-    def __init__(self,model,view):
+    def __init__(self,model,view): 
+        """initialize the class"""
         self.model = model
         self.view = view
         self.TowerTile= TowerTile
        
-    def handle_mouse_event(self,event):
-        if event.type == MOUSEBUTTONDOWN:
+    def handle_mouse_event(self,event): 
+        """"builds and upgrades towers"""" 
+        if event.type == MOUSEBUTTONDOWN: #if mouse is clicked
             x = event.pos[0]
             y = event.pos[1]
             tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)

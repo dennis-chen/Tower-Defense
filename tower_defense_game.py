@@ -531,14 +531,16 @@ class PyGameMouseController:
                     self.view.instructions2 = "Upgraded Damage: Maxed Out" + "   Upgraded Rate: Maxed Out"
          
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
-            if event.key == pygame.K_d and self.selected_tower.damage<=9:
+            if event.key == pygame.K_d and self.selected_tower.damage<=9 and self.model.gold >= 10:
+                self.model.gold -= 10                
                 self.selected_tower.damage +=1
                 self.tower_upgrade_mode = False
                 self.view.should_draw_instructions = False
                 self.view.should_draw_instructions_line2 = False
                 if self.selected_tower.damage>9:
                     self.selected_tower.damage_max=True
-            if event.key == pygame.K_f and self.selected_tower.speed<=4.6:
+            if event.key == pygame.K_f and self.selected_tower.speed<=4.6 and self.model.gold >= 5:
+                self.model.gold -= 5                
                 self.selected_tower.speed *=1.1
                 self.tower_upgrade_mode = False
                 self.view.should_draw_instructions = False

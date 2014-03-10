@@ -29,6 +29,7 @@ class TDModel:
         self.remaining_lives = 20
         self.creeplist = []
         self.pelletlist = []
+        self.waveform = WaveGenerator()
 
     def update(self):
 #        print self.tileGrid.path_list
@@ -46,9 +47,10 @@ class TDModel:
             p.update(self) #pass the pellet a creeplist so it knows if it will collide and it can mark creeps for deletion later
             if p.should_delete == True:
                 self.pelletlist.remove(p)
-        if len(self.creeplist)<50:
-            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,3,[0,0,0])
-            self.creeplist.append(creep)
+        self.waveform.update()
+        for c in self.waveform.push_list:
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,c[1],10,0,c[0],[0,0,0])
+            self.creeplist.append(creep)            
         for c in self.creeplist:
             c.update()
             if c.to_die == True:
@@ -69,8 +71,6 @@ def sign_arg(x):
     else:
         return 0
 
-
-    
 class TileGrid:
     """encodes tower and path tiles"""
     path_list = []
@@ -138,18 +138,75 @@ class TileGrid:
     def snap_tower_to_grid(self,x,y):
         """returns top left corner of the grid square that was clicked in"""
         return ((x//40),(y//40))
+
+class WaveGenerator:
+    """Handles the wave generation"""
+    def __init__(self):
+        self.wave_list = []
+        self.push_list = []
+        self.number_of_creeps = 10
+        self.duration = 1
+        self.hp_spd_prod = 2
+        self.clock = pygame.time.Clock()
         
+    def addWave(self,number_of_creeps, hp_spd_prod, duration):
+        self.wave_list.append(Wave(number_of_creeps, hp_spd_prod, duration))
+        
+    def update(self):
+        self.push_list = []
+        if len(self.wave_list)==0:
+            self.hp_spd_prod += 1
+            self.addWave(self.number_of_creeps,self.hp_spd_prod,self.duration)
+        else:
+            for creep_wave in self.wave_list:
+                if len(creep_wave.wave_sched) == 0:
+                    self.wave_list.remove(creep_wave)
+                elif creep_wave.push_creep:
+                    self.push_list.append(creep_wave.pushed_creep)
+                
+    
+class Wave:
+    """Encodes a wave, returns a list of hp-speed-gentime tuples
+    note gentime in this case constant"""
+    def __init__(self, number_of_creeps, hp_spd_prod, duration):
+        self.number_of_creeps = number_of_creeps
+        self.hp_spd_prod = hp_spd_prod
+        self.duration = duration
+        self.dt = self.number_of_creeps/self.duration    
+        self.wave_sched = self.generate_sched()
+        self.clock = pygame.time.Clock()
+        self.time_elapsed = 0
+        self.push_creep = False
+        self.pushed_creep = None
+    
+    def generate_sched(self):
+        schedule = []
+        for i in range(self.number_of_creeps):
+            hp = randint(1,int(self.hp_spd_prod))
+            speed = 1+self.hp_spd_prod/hp
+            gentime = self.dt
+            schedule.append((hp,speed,gentime))      
+        return schedule
+    
+    def update(self):
+        dT = self.clock.tick()
+        self.time_elapsed += dT
+        if self.time_elapsed_since_last_action > (self.dt): #conversion to seconds
+            self.pushed_creep = self.wave_sched.pop()
+            self.push_creep = True
+            self.time_elapsed_since_last_action = 0
+        else:
+            self.push_creep = False
+            
 class PathTile:
     image = pygame.image.load('pathTile.png') #
     def __init__(self):
-        self.color = (255,0,0)
-        
+        self.color = (255,0,0)        
                 
 class BlankTile:
     image = pygame.image.load('blankTile.png') #from 
     def __init__(self):
         self.color = (0,0,255)
-
         
 class TowerTile:
     """encodes the state of a tower within the game"""

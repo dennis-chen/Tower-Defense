@@ -48,7 +48,7 @@ class TDModel:
                 self.pelletlist.remove(p)
         if len(self.creeplist)<1:
 #            (self,x,y,vx,vy,speed,radius,checkpoint_index,health,color):
-            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,5,0,3,[0,0,0])
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,5,0,1,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
             c.update()
@@ -195,10 +195,16 @@ class Creeps:
         self.vx = 0
         self.vy = -speed
         self.speed = speed
-        self.radius = radius
-        self.checkpoint_index = checkpoint_index
+        if health<=26:
+            self.radius = int(5+health/2)
+        else:
+            self.radius= 18
+        self.checkpoint_index = 0
         self.health = health
-        self.color=[100*speed,0*speed,40*speed]      
+        if speed <= 25:
+            self.color=[0,0,10*speed]  
+        else:
+            self.color=[0,0,255]  
         self.to_die = False
         
     def checkpoint_loc(self):
@@ -208,19 +214,15 @@ class Creeps:
     def update(self):
         """updates attributes of the creep, including size and color based on health"""        
         self.step()
-        self.color=[60*(3-self.health),self.health*60,0]   
+        self.radius=int(5+self.health/2)
         if self.health < 1:
             self.to_die = True
     
     def reach_goal(self):
         """Method to remove from screen when creep reaches goal"""
         TDModel.remaining_lives += -1
-        creep_death(self)
-        
-    def creep_death(self):
-        """Method to execute when creep should be removed from screen"""
-        #remove creep from list of active creeps, undraw
-        
+
+              
     def step(self):
         """creep moves based on current velocity and checkpoint. creep moves
         amount specified by velocity, and increments counter if it will hit
@@ -236,6 +238,7 @@ class Creeps:
                 self.checkpoint_index +=1           
             else:
                 self.to_die = True
+                model.remaining_lives += -1
             newlocx = self.checkpoint_loc()[0]       
             newlocy = self.checkpoint_loc()[1]
             self.vx = self.speed*sign_arg(newlocx-self.x)            
@@ -362,6 +365,7 @@ class PyGameWindowView:
                         pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)))
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         for c in creeps:
+            print type(c.radius)
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
         for p in pellets:
             pygame.draw.circle(self.screen,pygame.Color(p.color[0],p.color[1],p.color[2]),(int(p.x),int(p.y)),p.radius)

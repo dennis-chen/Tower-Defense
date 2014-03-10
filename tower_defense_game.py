@@ -47,7 +47,8 @@ class TDModel:
             if p.should_delete == True:
                 self.pelletlist.remove(p)
         if len(self.creeplist)<1:
-            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,3,[0,0,0])
+#            (self,x,y,vx,vy,speed,radius,checkpoint_index,health,color):
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,5,0,3,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
             c.update()
@@ -197,7 +198,7 @@ class Creeps:
         self.radius = radius
         self.checkpoint_index = checkpoint_index
         self.health = health
-        self.color=[60*(3-self.health),self.health*60,0]      
+        self.color=[100*speed,0*speed,40*speed]      
         self.to_die = False
         
     def checkpoint_loc(self):

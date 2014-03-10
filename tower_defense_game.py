@@ -56,28 +56,27 @@ class TDModel:
             if p.should_delete == True:
                 self.pelletlist.remove(p)
         self.waveform.update()
+        #checks the wave gen if there is a creep to make, then adds to creep list if so
         if self.waveform.add_creep:
-            health = int(self.waveform.new_creep[0])
+            health = int(self.waveform.new_creep[0]) #gets the attributes for readibility
             speed = int(self.waveform.new_creep[1])
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,speed,10,0,health,[0,0,0])
-            self.creeplist.append(creep)   
-#        for c in self.waveform.push_list:
-#            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,c[1],10,0,c[0],[0,0,0])
-#            self.creeplist.append(creep)            
+            self.creeplist.append(creep)           
+#        run through the creep list to print them 
         for c in self.creeplist:
             c.update()
             if c.to_die == True:
                 self.creeplist.remove(c)
         self.score = int(self.waveform.hp_spd_prod-1)
- #      if pygame.time.get_ticks() % 1: 
-       #$#     pellet = Pellets(TileGrid.path_list[0][0],0,5,1,[0,0,0])
-#            self.pelletlist.append(pellet)
+
 def collision_check_full(x1,y1,x2,y2,r1,r2):
     """checks if two circles collide, returns boolean"""
     dist_squared = (x2-x1)**2+(y2-y1)**2
     return dist_squared < (r1+r2)**2
     
 def sign_arg(x):
+    """Returns sign(x)"""
+    #sign(x) wasn't actually working
     if x>0:
         return 1
     elif x<0:
@@ -351,6 +350,7 @@ class Pellet:
         
     def update(self,model):
         self.check_collision_and_remove_creeps(model)
+#        Redefines color based on damage of the pellet
         dmg = self.damage
         cR = min([25*dmg,255])
         cG = min([max([25*dmg-255,0]),255])
@@ -377,6 +377,7 @@ class Pellet:
                 
         
     def do_circles_overlap(self,x1,y1,r1,x2,y2,r2):
+        """Helper function to for collisions between two circles, returns boolean"""
         return (x2 - x1)**2 + (y2-y1)**2 <= (r1+r2)**2
     
 class Path:

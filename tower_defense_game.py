@@ -38,6 +38,8 @@ class TDModel:
         self.waveform = SimpleCreepGen()
         
     def update(self):
+        """updates the state of all objects that are drawn in the view, and keeps track of 
+        scoring, health, etc."""
 #        print self.tileGrid.path_list
         if self.remaining_lives <= 0:
             self.game_over = True
@@ -48,7 +50,7 @@ class TDModel:
                     tile.update()
                     if tile.should_shoot:
                         pellet_pos = self.tileGrid.return_center(i,j)
-                        self.pelletlist.append(Pellet(pellet_pos[0],pellet_pos[1],10*sin(radians(tile.angle +90)),10*cos(radians(tile.angle + 90)),tile.damage))
+                        self.pelletlist.append(Pellet(pellet_pos[0],pellet_pos[1],10*sin(radians(tile.angle +90)),10*cos(radians(tile.angle + 90)),tile.damage,tile))
                         #    def __init__(self,x,y,vx,vy,damage):
                         tile.should_shoot = False
         for p in self.pelletlist: 
@@ -79,6 +81,7 @@ def collision_check_full(x1,y1,x2,y2,r1,r2):
     return dist_squared < (r1+r2)**2
     
 def sign_arg(x):
+    """returns the sign of an argument"""
     if x>0:
         return 1
     elif x<0:
@@ -87,7 +90,7 @@ def sign_arg(x):
         return 0
 
 class TileGrid:
-    """encodes tower and path tiles"""
+    """encodes tower and path tiles, stored in a matrix of objects"""
     path_list = []
     def __init__(self):
         self.tiles = np.empty( [16,16], dtype=object)
@@ -142,12 +145,15 @@ class TileGrid:
         self.path_list = path_list
             
     def return_center(self,x,y): #tiles are 40 by 40 pixels, grid is 640 by 640
+        """returns pygame pixel values of the center of a location in the matrix"""
         return (x*40+20,y*40+20)
         
     def return_drawing_position(self,x,y):
+        """returns the pixel values of the top left corner of a block in the matrix"""
         return (x*40,y*40)
         
     def return_creep_path(self):
+        """returns the list of tuples that a creep will travel along"""
         return self.path_list
     
     def snap_tower_to_grid(self,x,y):
@@ -233,17 +239,20 @@ class Wave:
             self.push_creep = False
             
 class PathTile:
+    """stores image of a path tile that creeps run along"""
     image = pygame.image.load('pathTile.png') #
     def __init__(self):
         self.color = (255,0,0)        
                 
 class BlankTile:
+    """stores image of a blank tile that towers can be placed on"""
     image = pygame.image.load('blankTile.png') #from 
     def __init__(self):
         self.color = (0,0,255)
         
 class TowerTile:
-    """encodes the state of a tower within the game"""
+    """encodes the state of a tower within a game, keeping track of damage, speed, angle of shots
+    and timing of the shots"""
     image = pygame.image.load('Tower.png')
     def __init__(self,x,y):
         self.x = x
@@ -265,6 +274,7 @@ class TowerTile:
         self.angle = degrees(rads)
         
     def update(self):
+        """updates whether a tower should shoot or not, based on the clock"""
         if self.angle == None: #avoid shooting when the user hasn't set an angle yet
             return
         dt = self.clock.tick() 
@@ -277,9 +287,11 @@ class TowerTile:
         self.damage +=1
         
 class UI:
+    """stores UI image"""
     image = pygame.image.load('button_bar.png')
     
 class EndScreen:
+    """stores end game image"""
     image = pygame.image.load('end_screen_sprite.png')
 
 class Creeps:
@@ -356,8 +368,9 @@ checkpoint."""
             self.y += self.vy      
         
 class Pellet:
-    """encodes the state of a bullet within the game"""
-    def __init__(self,x,y,vx,vy,damage):
+    """encodes the state of a bullet within the game. bullets change color with 
+    the damage that they'll do to creeps."""
+    def __init__(self,x,y,vx,vy,damage,tower):
         self.x = x
         self.y = y
         self.vx = vx
@@ -369,6 +382,7 @@ class Pellet:
         cB = min([max([25*damage-510,0]),255])
         self.color=[cR,cG,cB]
         self.should_delete = False
+        self.tower = tower
         
     def step(self):
         """pellet moves based on current velocity."""
@@ -397,6 +411,7 @@ class Pellet:
         return (self.y-10,640-(self.y+10),self.x-10,640-(self.x+10))
         
     def update(self,model):
+        """updates colors and removes itself if it has collided"""
         self.check_collision_and_remove_creeps(model)
         dmg = self.damage
         cR = min([25*dmg,255])
@@ -404,13 +419,18 @@ class Pellet:
         cB = min([max([25*dmg-510,0]),255])
         self.color=[cR,cG,cB]
         self.step()
+        
     def check_collision_and_remove_creeps(self,model):
         """to decrease the number of checks that need to happen, only bullets 
         that are on the creep path will be checked at all! It's possible to find multiple colliding
         creeps but the one that will be removed is the first creep in the list (e.x. creeps that have
         been around longer anyway)"""        
         tile_location = model.tileGrid.snap_tower_to_grid(self.x,self.y)
-        if isinstance(model.tileGrid.tiles[tile_location[0],tile_location[1]],PathTile):
+        checked_tile = model.tileGrid.tiles[tile_location[0],tile_location[1]]
+        if isinstance(checked_tile,TowerTile) and checked_tile != self.tower:
+            self.should_delete = True
+            return
+        if isinstance(checked_tile,PathTile):
             creeps = model.creeplist
             index = 0
             found_colliding_creep = False
@@ -426,11 +446,6 @@ class Pellet:
     def do_circles_overlap(self,x1,y1,r1,x2,y2,r2):
         return (x2 - x1)**2 + (y2-y1)**2 <= (r1+r2)**2
     
-class Path:
-    """list of positions within the grid"""
-    def __init__(self):
-        pass
-        
 class PyGameWindowView:
     """renders TD model to game window"""
     should_draw_instructions = False
@@ -503,6 +518,7 @@ class PyGameMouseController:
     tower_aim_mode = False
     current_tower = None
     tower_upgrade_mode= False
+    rate_max=False
     def __init__(self,model,view):
         self.model = model
         self.view = view
@@ -542,22 +558,38 @@ class PyGameMouseController:
                 self.tower_upgrade_mode=False
                 self.view.should_draw_instructions = False
                 self.view.should_draw_instructions_line2 = False
-            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode:
+            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode and self.rate_max==False:
                 self.selected_tower=self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]]
                 self.view.should_draw_instructions = True
                 self.view.should_draw_instructions_line2 = True
                 self.tower_upgrade_mode=True
                 self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
-                self.view.instructions2 = "Upgraded Damage"+ "("+ "10"+"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate" + "(5$):"
+                self.view.instructions2 = "Upgraded Damage"+ "("+ "10"+"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate" + "(5$):" +str(round(self.selected_tower.speed*1.2,2))
+            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode and self.rate_max==True:
+                self.selected_tower=self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]]
+                self.view.should_draw_instructions = True
+                self.view.should_draw_instructions_line2 = True
+                self.tower_upgrade_mode=True
+                self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
+                self.view.instructions2 = "Upgraded Damage"+ "("+ "10"+"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate: Maxed Out"
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
             self.view.should_draw_instructions = True
             if event.key == pygame.K_d:
-                if model.gold >= 10:
+                if self.model.gold >= 10:
                     self.model.gold -= 10
                     self.selected_tower.damage +=1
                     self.tower_upgrade_mode = False
                     self.view.should_draw_instructions = False
                     self.view.should_draw_instructions_line2 = False
+            if event.key == pygame.K_f and self.selected_tower.speed<=4.6:
+                if self.model.gold >= 5:
+                    self.model.gold -= 5
+                    self.selected_tower.speed *=1.1
+                    self.tower_upgrade_mode = False
+                    self.view.should_draw_instructions = False
+                    self.view.should_draw_instructions_line2 = False
+                    if self.selected_tower.speed>4.6:
+                        self.rate_max=True
                 
 if __name__ == '__main__':
     pygame.init()

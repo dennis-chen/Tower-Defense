@@ -502,6 +502,7 @@ class PyGameMouseController:
     tower_aim_mode = False
     current_tower = None
     tower_upgrade_mode= False
+    rate_max=False
     def __init__(self,model,view):
         self.model = model
         self.view = view
@@ -540,13 +541,20 @@ class PyGameMouseController:
                 self.tower_upgrade_mode=False
                 self.view.should_draw_instructions = False
                 self.view.should_draw_instructions_line2 = False
-            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode:
+            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode and self.rate_max==False:
                 self.selected_tower=self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]]
                 self.view.should_draw_instructions = True
                 self.view.should_draw_instructions_line2 = True
                 self.tower_upgrade_mode=True
                 self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
-                self.view.instructions2 = "Upgraded Damage"+ "("+ "10"+"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate" + "(5$):"
+                self.view.instructions2 = "Upgraded Damage"+ "("+ "10"+"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate" + "(5$):" +str(round(self.selected_tower.speed*1.2,2))
+            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode and self.rate_max==True:
+                self.selected_tower=self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]]
+                self.view.should_draw_instructions = True
+                self.view.should_draw_instructions_line2 = True
+                self.tower_upgrade_mode=True
+                self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
+                self.view.instructions2 = "Upgraded Damage"+ "("+ "10"+"$):" + str(self.selected_tower.damage +1) + "   Upgraded Rate: Maxed Out"
         elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
             self.view.should_draw_instructions = True
             if event.key == pygame.K_d:
@@ -554,6 +562,13 @@ class PyGameMouseController:
                 self.tower_upgrade_mode = False
                 self.view.should_draw_instructions = False
                 self.view.should_draw_instructions_line2 = False
+            if event.key == pygame.K_f and self.selected_tower.speed<=4.6:
+                self.selected_tower.speed *=1.1
+                self.tower_upgrade_mode = False
+                self.view.should_draw_instructions = False
+                self.view.should_draw_instructions_line2 = False
+                if self.selected_tower.speed>4.6:
+                    self.rate_max=True
                 
 if __name__ == '__main__':
     pygame.init()

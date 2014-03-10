@@ -49,6 +49,8 @@ class TDModel:
         if len(self.creeplist)<1:
 #            (self,x,y,vx,vy,speed,radius,checkpoint_index,health,color):
             creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,5,0,1,[0,0,0])
+        if len(self.creeplist)<50:
+            creep = Creeps(self.tileGrid.path_list[0][0],self.tileGrid.path_list[0][1],0,-1,1,10,0,3,[0,0,0])
             self.creeplist.append(creep)
         for c in self.creeplist:
             c.update()
@@ -69,6 +71,8 @@ def sign_arg(x):
         return -1
     else:
         return 0
+
+
     
 class TileGrid:
     """encodes tower and path tiles"""
@@ -162,7 +166,7 @@ class TowerTile:
         self.time_elapsed_since_last_action = 0
         self.should_shoot = False
         self.clock = pygame.time.Clock()
-        
+
     def set_angle(self,x,y):
         """sets angle that the tower shoots at, measuring from the positive x-axis
         going CCW like in typical polar coordinates fashion. Code taken from stackoverflow"""
@@ -272,20 +276,20 @@ class Pellet:
         
     def step(self):
         """pellet moves based on current velocity."""
-        if self.x == 620 or self.x == 20 or self.y == 620 or self.y == 20:
+        if self.x == 630 or self.x == 10 or self.y == 630 or self.y == 10:
             self.should_delete = True
             return
         distances = self.find_dist_from_edges()
         initial_x = self.x
         initial_y = self.y
         if self.vx > distances[3]:
-            self.x = 620
+            self.x = 630
         elif self.vx < -distances[2]:
-            self.x = 20
+            self.x = 10
         if self.vy > distances[1]:
-            self.y = 620
+            self.y = 630
         elif self.vy < -distances[0]:
-            self.y = 20
+            self.y = 10
         if self.x == initial_x:
             self.x += self.vx
         if self.y == initial_y:
@@ -294,11 +298,12 @@ class Pellet:
     def find_dist_from_edges(self):
         """returns how far the edge of the circular pellet is from all four edges
         in the order of dist from top, bottom, left, and right"""
-        return (self.y-20,640-(self.y+20),self.x-20,640-(self.x+20))
+        return (self.y-10,640-(self.y+10),self.x-10,640-(self.x+10))
         
     def update(self,model):
         self.check_collision_and_remove_creeps(model)
         self.step()
+        
         
     def check_collision_and_remove_creeps(self,model):
         """to decrease the number of checks that need to happen, only bullets 
@@ -362,10 +367,10 @@ class PyGameWindowView:
                 if isinstance(obj,TowerTile):
                     if obj.angle != None:
                         angle = radians(obj.angle + 90)
-                        pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)))
+                        pygame.draw.line(self.screen, (255, 0, 0), (obj.x+20, obj.y+20), (obj.x+20+20*sin(angle), obj.y+20+20*cos(angle)),2)
                 #pygame.draw.rect(self.screen,pygame.Color(obj.color[0], obj.color[1], obj.color[2]),pygame.Rect(pos[0], pos[1], 40, 40))
         for c in creeps:
-            print type(c.radius)
+          
             pygame.draw.circle(self.screen,pygame.Color(c.color[0],c.color[1],c.color[2]),(c.x,c.y),c.radius)
         for p in pellets:
             pygame.draw.circle(self.screen,pygame.Color(p.color[0],p.color[1],p.color[2]),(int(p.x),int(p.y)),p.radius)
@@ -377,7 +382,9 @@ class PyGameWindowView:
 class PyGameMouseController:
     tower_place_mode = False
     tower_aim_mode = False
+    tower_upgrade_mode = False
     current_tower = None
+    selected_tower=None
     def __init__(self,model,view):
         self.model = model
         self.view = view
@@ -386,11 +393,13 @@ class PyGameMouseController:
         if event.type == MOUSEBUTTONDOWN:
             x = event.pos[0]
             y = event.pos[1]
+            tower_snap_pos = self.model.tileGrid.snap_tower_to_grid(x,y)
             print str(x)
             print str(y)
             if not self.tower_place_mode and not self.tower_aim_mode and 25 < x < 185 and 650 < y < 690 and self.model.gold >= self.model.tower_cost:
                 self.tower_place_mode = True
-                self.view.instructions = "Click somewhere in the grid to place your tower!"
+                self.tower_upgrade_mode=False
+                self.view.instructions = "Click anywhere in the green area to place your tower! Towere Cost 50 gold"
                 self.view.should_draw_instructions = True
                 pygame.mouse.set_cursor(*pygame.cursors.diamond)
             elif self.tower_place_mode and not self.tower_aim_mode and 0 < y < 640:
@@ -410,7 +419,18 @@ class PyGameMouseController:
                 self.tower_place_mode = False
                 self.tower_aim_mode = False
                 self.current_tower = None
-                
+            elif self.tower_upgrade_mode== True and 0 < y < 640: #Cancels upgrade mode if you click anywhere
+                self.tower_upgrade_mode=False
+                self.view.should_draw_instructions = False
+            elif 0 < y < 640 and isinstance(self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]],TowerTile) and not self.tower_aim_mode and not self.tower_place_mode:
+                self.selected_tower=self.model.tileGrid.tiles[tower_snap_pos[0]][tower_snap_pos[1]]
+                self.view.should_draw_instructions = True
+                self.tower_upgrade_mode=True
+                self.view.instructions = "'D' to upgrade Damage and 'F' to upgrade Firing Rate!"
+        elif event.type == KEYDOWN and self.tower_upgrade_mode == True:
+            self.view.should_draw_instructions = True
+            if event.key == pygame.K_d:            
+                print self.selected_tower
 if __name__ == '__main__':
     pygame.init()
     tile_grid = TileGrid()
